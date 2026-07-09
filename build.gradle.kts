@@ -1,11 +1,10 @@
-@file:Suppress("SpellCheckingInspection")
-
 plugins {
     id("java")
-    id("io.qameta.allure") version "2.12.0"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.allure)
 }
 
-group = "ru.superkassa.tests"
+group = "kz.superkassa.tests"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -18,44 +17,126 @@ java {
     }
 }
 
-val allureVersion = "2.29.1"
-val assertjVersion = "3.27.3"
-val awaitilityVersion = "4.3.0"
-val configVersion = "1.4.3"
-val hikariVersion = "6.3.0"
-val jacksonVersion = "2.19.1"
-val junitVersion = "5.13.3"
-val logbackVersion = "1.5.18"
-val protobufVersion = "4.31.1"
-val restAssuredVersion = "5.5.5"
-val slf4jVersion = "2.0.17"
-val testcontainersVersion = "1.21.3"
+val allureReportVersion = libs.versions.allure.report.get()
+val allureJavaAdapterVersion = libs.versions.allure.java.get()
+
+allure {
+    version.set(allureReportVersion)
+    report {
+        configFile.set(layout.projectDirectory.file("config/allurerc.json"))
+        singleFile.set(true)
+    }
+    adapter {
+        allureJavaVersion.set(allureJavaAdapterVersion)
+        frameworks {
+            junit5 {
+                enabled.set(true)
+            }
+        }
+    }
+}
+
+tasks.named("installAllure3") {
+    doFirst {
+        if (!System.getProperty("os.name").lowercase().contains("windows")) {
+            val nodeBin = layout.buildDirectory.file("allure/node/bin/node").get().asFile
+            val npmBin = layout.buildDirectory.file("allure/node/bin/npm").get().asFile
+            val npmCli = layout.buildDirectory.file("allure/node/lib/node_modules/npm/bin/npm-cli.js").get().asFile
+
+            npmBin.delete()
+            npmBin.writeText(
+                """
+                #!/bin/sh
+                exec "${nodeBin.absolutePath}" "${npmCli.absolutePath}" "$@"
+                """.trimIndent()
+            )
+            npmBin.setExecutable(true)
+        }
+    }
+}
+
+tasks.named<io.qameta.allure.gradle.report.tasks.AllureReport>("allureReport") {
+    resultsDirs.setFrom(layout.buildDirectory.dir("allure-results"))
+    mustRunAfter(tasks.withType<Test>())
+}
+
+tasks.named<io.qameta.allure.gradle.report.tasks.AllureServe>("allureServe") {
+    resultsDirs.setFrom(layout.buildDirectory.dir("allure-results"))
+    mustRunAfter(tasks.withType<Test>())
+    actions.clear()
+    doLast {
+        val allureExecutable = if (System.getProperty("os.name").lowercase().contains("windows")) {
+            layout.buildDirectory.file("allure/commandline/bin/allure.bat").get().asFile
+        } else {
+            layout.buildDirectory.file("allure/commandline/bin/allure").get().asFile
+        }
+        val resultsDir = layout.buildDirectory.dir("allure-results").get().asFile
+        val reportDir = layout.buildDirectory.dir("reports/allure-report/allureServe").get().asFile
+        val config = layout.projectDirectory.file("config/allurerc.json").asFile
+
+        val command = mutableListOf(
+            allureExecutable.absolutePath,
+            "generate",
+            resultsDir.absolutePath,
+            "--config",
+            config.absolutePath,
+            "--output",
+            reportDir.absolutePath,
+            "--open"
+        )
+        port.orNull?.let {
+            command.addAll(listOf("--port", it.toString()))
+        }
+
+        val process = ProcessBuilder(command)
+            .directory(projectDir)
+            .inheritIO()
+            .start()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException(
+                "Allure serve failed with exit code $exitCode. Command: ${
+                    command.joinToString(" ")
+                }"
+            )
+        }
+    }
+}
 
 dependencies {
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-    implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:$jacksonVersion")
-    implementation("com.google.protobuf:protobuf-java:$protobufVersion")
-    implementation("com.typesafe:config:$configVersion")
-    implementation("com.zaxxer:HikariCP:$hikariVersion")
-    implementation("io.qameta.allure:allure-rest-assured:$allureVersion")
-    implementation("io.rest-assured:rest-assured:$restAssuredVersion")
-    implementation("org.awaitility:awaitility:$awaitilityVersion")
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation(libs.kotlin.reflect)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.jsr310)
+    implementation(libs.jackson.kotlin)
+    implementation(libs.jackson.parameter.names)
+    implementation(libs.protobuf.java)
+    implementation(libs.config)
+    implementation(libs.hikari)
+    implementation(libs.allure.rest.assured)
+    implementation(libs.rest.assured)
+    implementation(libs.awaitility)
+    implementation(libs.commons.codec)
+    implementation(libs.commons.lang3)
+    implementation(libs.slf4j.api)
 
-    runtimeOnly("ch.qos.logback:logback-classic:$logbackVersion")
+    runtimeOnly(libs.logback.classic)
 
-    testImplementation(platform("org.junit:junit-bom:$junitVersion"))
-    testImplementation(platform("org.testcontainers:testcontainers-bom:$testcontainersVersion"))
-    testImplementation("io.qameta.allure:allure-junit5:$allureVersion")
-    testImplementation("org.assertj:assertj-core:$assertjVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.junit.jupiter:junit-jupiter-params")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.postgresql:postgresql:42.7.7")
-    testRuntimeOnly("org.junit.platform:junit-platform-suite")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    constraints {
+        implementation(libs.commons.compress)
+    }
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(platform(libs.testcontainers.bom))
+    testImplementation(libs.allure.junit5)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.testcontainers.junit)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.postgresql)
+    testRuntimeOnly(libs.junit.platform.suite)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.withType<Test>().configureEach {
@@ -72,6 +153,8 @@ fun registerLayerTask(name: String, tagExpression: String) {
     tasks.register<Test>(name) {
         group = "verification"
         description = "Runs tests matching tag expression: $tagExpression."
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
         useJUnitPlatform {
             includeTags(tagExpression)
         }

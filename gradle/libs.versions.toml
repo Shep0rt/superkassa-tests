@@ -1,24 +1,31 @@
 [versions]
-allure = "2.29.1"
+allure-java = "2.35.3"
+allure-report = "3.4.1"
+allure-gradle-plugin = "4.1.0"
 assertj = "3.27.7"
 awaitility = "4.3.0"
 commons-codec = "1.22.0"
 commons-compress = "1.28.0"
 commons-lang3 = "3.20.0"
-config = "1.4.3"
-hikari = "6.3.0"
+config = "1.4.9"
+hikari = "7.1.0"
 jackson = "2.22.1"
-junit = "5.13.3"
-logback = "1.5.18"
-postgresql = "42.7.7"
-protobuf = "4.31.1"
-rest-assured = "5.5.7"
-slf4j = "2.0.17"
-testcontainers = "1.21.3"
+junit = "6.1.1"
+kotlin = "2.4.0"
+logback = "1.5.37"
+postgresql = "42.7.13"
+protobuf = "4.35.1"
+rest-assured = "6.0.0"
+slf4j = "2.0.18"
+testcontainers = "2.0.5"
+
+[plugins]
+allure = { id = "io.qameta.allure", version.ref = "allure-gradle-plugin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
 [libraries]
-allure-junit5 = { module = "io.qameta.allure:allure-junit5", version.ref = "allure" }
-allure-rest-assured = { module = "io.qameta.allure:allure-rest-assured", version.ref = "allure" }
+allure-junit5 = { module = "io.qameta.allure:allure-junit5", version.ref = "allure-java" }
+allure-rest-assured = { module = "io.qameta.allure:allure-rest-assured", version.ref = "allure-java" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons-codec" }
@@ -29,17 +36,19 @@ hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-parameter-names = { module = "com.fasterxml.jackson.module:jackson-module-parameter-names", version.ref = "jackson" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
-testcontainers-junit = { module = "org.testcontainers:junit-jupiter" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql" }
+testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }

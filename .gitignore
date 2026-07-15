@@ -51,3 +51,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Local working notes
+TESTING_STYLE.md

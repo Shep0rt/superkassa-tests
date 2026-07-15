@@ -104,12 +104,7 @@ tasks.named<io.qameta.allure.gradle.report.tasks.AllureServe>("allureServe") {
 }
 
 dependencies {
-    implementation(libs.kotlin.reflect)
     implementation(libs.jackson.databind)
-    implementation(libs.jackson.core)
-    implementation(libs.jackson.jsr310)
-    implementation(libs.jackson.kotlin)
-    implementation(libs.jackson.parameter.names)
     implementation(libs.protobuf.java)
     implementation(libs.config)
     implementation(libs.hikari)

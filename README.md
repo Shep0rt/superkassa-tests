@@ -31,7 +31,7 @@ Gradle-задачи используют пересечение тегов. На
 
 Проект автотестов переведен на Kotlin. Новые тесты и framework-код пишем на Kotlin.
 
-- `src/main/kotlin`: тестовый framework, API-клиенты, DTO, конфигурация, DB/protocol/support helpers.
+- `src/main/kotlin`: тестовый framework, API-клиенты, конфигурация, DB/protocol/support helpers.
 - `src/test/kotlin`: сами тесты, базовый класс тестов и теги `@ApiSmoke`, `@ApiRegression` и аналогичные.
 - `src/main/resources`: runtime-конфигурация тестов.
 - `src/test/resources`: настройки JUnit Platform.

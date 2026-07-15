@@ -1,0 +1,237 @@
+package kz.superkassa.tests.api.diagnostics
+
+import io.qameta.allure.Feature
+import io.qameta.allure.Owner
+import io.qameta.allure.Severity
+import io.qameta.allure.SeverityLevel
+import io.qameta.allure.Story
+import io.restassured.http.ContentType
+import io.restassured.http.Method
+import io.restassured.path.json.JsonPath
+import io.restassured.response.Response
+import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.contract.ApiEnumValues
+import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.tags.ApiRegression
+import org.assertj.core.api.SoftAssertions
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+
+@ApiRegression
+@Feature("API")
+@Story("GET /health")
+@Owner("Pavel Michka")
+@DisplayName("GET /health: регрессионные проверки состояния сервиса")
+@Suppress("SameParameterValue")
+class HealthRegressionTest : BaseTest() {
+    @Test
+    @Severity(SeverityLevel.CRITICAL)
+    @DisplayName("Метод GET /health возвращает поля ожидаемых типов")
+    fun shouldReturnExpectedFieldTypes() {
+        val json = getHealthJson()
+        val response = json.getMap<String, Any?>("")
+
+        SoftAssertions().apply {
+            assertFieldType(this, response, ENDPOINT, "storage", String::class.java, "HealthResponse")
+            assertFieldType(this, response, ENDPOINT, "status", String::class.java, "HealthResponse")
+        }.assertAll()
+    }
+
+    @Test
+    @Severity(SeverityLevel.CRITICAL)
+    @DisplayName("Метод GET /health не возвращает поля вне ожидаемой структуры")
+    fun shouldNotReturnFieldsOutsideExpectedStructure() {
+        val json = getHealthJson()
+        val response = json.getMap<String, Any?>("")
+
+        SoftAssertions().apply {
+            assertOnlySwaggerFields(this, response, ENDPOINT, "HealthResponse", HEALTH_RESPONSE_FIELDS)
+        }.assertAll()
+    }
+
+    @Test
+    @Severity(SeverityLevel.NORMAL)
+    @DisplayName("Метод GET /health с checkOfd=false возвращает базовую структуру")
+    fun shouldReturnBaseHealthWhenOfdCheckDisabled() {
+        val json = getHealthJson(checkOfd = false)
+        val response = json.getMap<String, Any?>("")
+
+        SoftAssertions().apply {
+            assertFieldType(this, response, ENDPOINT, "storage", String::class.java, "HealthResponse")
+            assertFieldType(this, response, ENDPOINT, "status", String::class.java, "HealthResponse")
+            assertOnlySwaggerFields(this, response, ENDPOINT, "HealthResponse", HEALTH_RESPONSE_FIELDS)
+        }.assertAll()
+    }
+
+    @Test
+    @Severity(SeverityLevel.NORMAL)
+    @DisplayName("Метод GET /health с checkOfd=true возвращает результаты проверки ОФД")
+    fun shouldReturnOfdHealthWhenOfdCheckEnabled() {
+        val json = getHealthJson(checkOfd = true)
+        val response = json.getMap<String, Any?>("")
+
+        SoftAssertions().apply {
+            assertFieldType(this, response, ENDPOINT, "storage", String::class.java, "HealthResponse")
+            assertFieldType(this, response, ENDPOINT, "status", String::class.java, "HealthResponse")
+            assertFieldType(this, response, ENDPOINT, "ofd", Map::class.java, "HealthResponse")
+            assertOnlySwaggerFields(this, response, ENDPOINT, "HealthResponse", HEALTH_WITH_OFD_RESPONSE_FIELDS)
+            assertOfdStatuses(this, json.getMap("ofd"))
+        }.assertAll()
+    }
+
+    @Test
+    @Severity(SeverityLevel.NORMAL)
+    @DisplayName("Метод GET /health фильтрует проверку ОФД по окружению")
+    fun shouldFilterOfdHealthByEnvironment() {
+        val json = getHealthJson(checkOfd = true, ofdEnvironment = "TEST")
+        val ofd = json.getMap<String, Any?>("ofd")
+
+        SoftAssertions().apply {
+            assertOfdStatuses(this, ofd)
+            ofd.keys.forEach { key ->
+                assertThat(key)
+                    .withFailMessage(
+                        "Контракт API нарушен: фильтр ofdEnvironment=TEST в GET /health вернул ключ '%s', " +
+                            "который не относится к окружению TEST.",
+                        key,
+                    )
+                    .endsWith(":TEST")
+            }
+        }.assertAll()
+    }
+
+    @Test
+    @Severity(SeverityLevel.NORMAL)
+    @DisplayName("Метод GET /health фильтрует проверку ОФД по провайдеру")
+    fun shouldFilterOfdHealthByProvider() {
+        val json = getHealthJson(checkOfd = true, ofdProvider = "KAZAKHTELECOM")
+        val ofd = json.getMap<String, Any?>("ofd")
+
+        SoftAssertions().apply {
+            assertOfdStatuses(this, ofd)
+            ofd.keys.forEach { key ->
+                assertThat(key)
+                    .withFailMessage(
+                        "Контракт API нарушен: фильтр ofdProvider=KAZAKHTELECOM в GET /health вернул ключ '%s', " +
+                            "который не относится к провайдеру KAZAKHTELECOM.",
+                        key,
+                    )
+                    .startsWith("KAZAKHTELECOM:")
+            }
+        }.assertAll()
+    }
+
+    @Test
+    @Severity(SeverityLevel.NORMAL)
+    @DisplayName("Метод GET /health возвращает 400 для невалидного checkOfd")
+    fun shouldReturnBadRequestForInvalidCheckOfd() {
+        superkassa.request()
+            .queryParam("checkOfd", "invalid")
+            .`when`()
+            .get("/health")
+            .then()
+            .shouldHaveStatus(400, "невалидный запрос")
+            .contentType(ContentType.JSON)
+    }
+
+    @ParameterizedTest(name = "HTTP {0} /health возвращает 405")
+    @EnumSource(value = Method::class, names = ["POST", "PUT", "PATCH", "DELETE"])
+    @Severity(SeverityLevel.NORMAL)
+    @DisplayName("Метод /health возвращает 405 для HTTP-методов кроме GET")
+    fun shouldReturnMethodNotAllowedForNonGetMethods(method: Method) {
+        superkassa.request()
+            .`when`()
+            .request(method, "/health")
+            .then()
+            .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+    }
+
+    private fun getHealthJson(
+        checkOfd: Boolean? = null,
+        ofdEnvironment: String? = null,
+        ofdProvider: String? = null,
+    ): JsonPath {
+        val request = superkassa.request()
+
+        checkOfd?.let { request.queryParam("checkOfd", it) }
+        ofdEnvironment?.let { request.queryParam("ofdEnvironment", it) }
+        ofdProvider?.let { request.queryParam("ofdProvider", it) }
+
+        val response: Response = request
+            .`when`()
+            .get("/health")
+            .then()
+            .shouldHaveStatus(200, "успешный запрос")
+            .contentType(ContentType.JSON)
+            .extract()
+            .response()
+
+        return response.jsonPath()
+    }
+
+    private fun assertFieldType(
+        softly: SoftAssertions,
+        item: Map<String, Any?>,
+        endpoint: String,
+        fieldName: String,
+        expectedType: Class<*>,
+        schemaName: String,
+    ) {
+        softly.assertThat(item)
+            .withFailMessage(ApiContractErrorMessages.requiredFieldWithTypeMissing(endpoint, fieldName, expectedType.simpleName, schemaName))
+            .containsKey(fieldName)
+
+        softly.assertThat(item[fieldName])
+            .withFailMessage(ApiContractErrorMessages.fieldTypeMismatch(endpoint, fieldName, expectedType.simpleName, schemaName))
+            .isInstanceOf(expectedType)
+    }
+
+    private fun assertOnlySwaggerFields(
+        softly: SoftAssertions,
+        item: Map<String, Any?>,
+        endpoint: String,
+        objectPath: String,
+        allowedFields: Set<String>,
+    ) {
+        val unexpectedFields = item.keys - allowedFields
+
+        softly.assertThat(unexpectedFields)
+            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, objectPath, unexpectedFields))
+            .isEmpty()
+    }
+
+    private fun assertOfdStatuses(softly: SoftAssertions, ofd: Map<String, Any?>) {
+        ofd.forEach { (key, status) ->
+            softly.assertThat(key)
+                .withFailMessage(
+                    "Контракт API нарушен: ключ '%s' в объекте 'ofd' ответа GET /health должен иметь формат PROVIDER:ENVIRONMENT.",
+                    key,
+                )
+                .contains(":")
+            softly.assertThat(status)
+                .withFailMessage(
+                    "Контракт API нарушен: поле 'ofd.%s' в ответе GET /health должно иметь тип 'String' согласно Swagger-описанию метода GET /health и ожидаемой структуре HealthResponse.",
+                    key,
+                )
+                .isInstanceOf(String::class.java)
+            softly.assertThat(status as? String)
+                .withFailMessage(
+                    "Контракт API нарушен: поле 'ofd.%s' в ответе GET /health содержит неподдерживаемое значение '%s'. " +
+                        "Допустимые префиксы статуса: %s.",
+                    key,
+                    status,
+                    ApiEnumValues.HEALTH_OFD_STATUS_PREFIXES.joinToString(),
+                )
+                .matches { value -> ApiEnumValues.HEALTH_OFD_STATUS_PREFIXES.any { value.startsWith(it) } }
+        }
+    }
+
+    private companion object {
+        const val ENDPOINT = "GET /health"
+
+        val HEALTH_RESPONSE_FIELDS = setOf("storage", "status")
+        val HEALTH_WITH_OFD_RESPONSE_FIELDS = setOf("storage", "status", "ofd")
+    }
+}

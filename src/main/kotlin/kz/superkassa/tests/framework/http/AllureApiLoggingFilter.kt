@@ -1,6 +1,7 @@
 package kz.superkassa.tests.framework.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectWriter
 import io.qameta.allure.Allure
 import io.restassured.filter.Filter
 import io.restassured.filter.FilterContext
@@ -139,6 +140,6 @@ class AllureApiLoggingFilter : Filter {
     private companion object {
         val SENSITIVE_HEADERS = setOf("authorization", "proxy-authorization", "cookie", "set-cookie")
         val OBJECT_MAPPER = ObjectMapper()
-        val PRETTY_JSON = OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
+        val PRETTY_JSON: ObjectWriter = OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
     }
 }

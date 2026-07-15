@@ -2,7 +2,7 @@ package kz.superkassa.tests.framework.protocol
 
 import java.time.Instant
 
-@Suppress("unused")
+@Suppress("ArrayInDataClass", "unused")
 data class CpcrMessageArtifact(
     val correlationId: String,
     val command: String,

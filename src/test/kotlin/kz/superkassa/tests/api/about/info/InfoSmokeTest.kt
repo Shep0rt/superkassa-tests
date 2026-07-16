@@ -10,6 +10,7 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.DisplayName
@@ -26,12 +27,14 @@ class InfoSmokeTest : BaseTest() {
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /info возвращает HTTP 200 и JSON")
     fun shouldReturnInfoSuccessfully() {
-        superkassa.request()
-            .`when`()
-            .get("/info")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
+        reportStep("Получаем информацию о Superkassa через GET /info") {
+            superkassa.request()
+                .`when`()
+                .get("/info")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     @Test
@@ -100,14 +103,16 @@ class InfoSmokeTest : BaseTest() {
     }
 
     private fun getInfoJson(): JsonPath {
-        val response: Response = superkassa.request()
-            .`when`()
-            .get("/info")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Получаем информацию о Superkassa через GET /info") {
+            superkassa.request()
+                .`when`()
+                .get("/info")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
     }

@@ -8,11 +8,17 @@ import kz.superkassa.tests.framework.config.TestConfig
 class SuperkassaApiClient(
     private val config: TestConfig,
 ) {
-    fun request(): RequestSpecification =
+    fun request(authPin: String = config.authPin): RequestSpecification =
+        baseRequest()
+            .header("Authorization", "Bearer $authPin")
+
+    fun requestWithoutAuthorization(): RequestSpecification =
+        baseRequest()
+
+    private fun baseRequest(): RequestSpecification =
         RestAssured.given()
             .filter(AllureApiLoggingFilter())
             .baseUri(config.baseUrl)
-            .header("Authorization", "Bearer ${config.apiToken}")
             .contentType("application/json")
             .accept("application/json")
 }

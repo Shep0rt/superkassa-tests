@@ -24,9 +24,10 @@ object ApiContractErrorMessages {
         "Контракт API нарушен: элемент '$fieldName[$index]' в ответе $endpoint должен иметь тип '$expectedType' " +
             "согласно Swagger-схеме $schemaName."
 
-    fun unexpectedSwaggerFields(endpoint: String, objectPath: String, unexpectedFields: Set<String>): String =
-        "Контракт API нарушен: объект '$objectPath' в ответе $endpoint содержит поля, которых нет в Swagger-контракте: " +
+    fun unexpectedSwaggerFields(endpoint: String, schemaName: String, unexpectedFields: Set<String>): String {
+        return "Контракт API нарушен: объект '$schemaName' в ответе $endpoint содержит поля, которых нет в Swagger-контракте: " +
             unexpectedFields.joinToString()
+    }
 
     fun requiredEnumMissing(endpoint: String, fieldName: String, schemaName: String): String =
         "Контракт API нарушен: обязательное поле '$fieldName' в ответе $endpoint отсутствует, пустое или имеет неверный тип. " +

@@ -10,8 +10,8 @@ class TestConfig private constructor(
     val baseUrl: String
         get() = config.getString("superkassa.base-url")
 
-    val apiToken: String
-        get() = config.getString("superkassa.api-token")
+    val authPin: String
+        get() = config.getString("superkassa.auth-pin")
 
     val databaseJdbcUrl: String
         get() = config.getString("database.jdbc-url")

@@ -1,5 +1,6 @@
-package kz.superkassa.tests.api.settings
+package kz.superkassa.tests.api.settings.put
 
+import io.qameta.allure.Allure
 import io.qameta.allure.Feature
 import io.qameta.allure.Owner
 import io.qameta.allure.Severity
@@ -10,35 +11,49 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @ApiSmoke
 @Feature("API")
-@Story("GET /settings")
+@Story("PUT /settings")
 @Owner("Pavel Michka")
-@DisplayName("GET /settings: smoke-проверки настроек Superkassa")
+@DisplayName("PUT /settings: smoke-проверки обновления настроек Superkassa")
 @Suppress("SameParameterValue")
-class SettingsSmokeTest : BaseTest() {
+class SettingsPutSmokeTest : BaseTest() {
     @Test
     @Severity(SeverityLevel.BLOCKER)
-    @DisplayName("Метод GET /settings возвращает HTTP 200 и JSON")
-    fun shouldReturnSettingsSuccessfully() {
-        superkassa.request()
-            .`when`()
-            .get("/settings")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
+    @DisplayName("Метод PUT /settings принимает текущие настройки и возвращает HTTP 200 и JSON")
+    fun shouldUpdateSettingsWithCurrentConfigurationSuccessfully() {
+        val currentSettings = getCurrentSettings()
+
+        assumeSettingsChangesAllowed(currentSettings)
+
+        reportStep("Отправляем текущие настройки через PUT /settings") {
+            superkassa.request()
+                .body(currentSettings)
+                .`when`()
+                .put("/settings")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     @Test
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /settings возвращает обязательные поля")
-    fun shouldReturnRequiredFields() {
-        val json = getSettingsJson()
+    @DisplayName("Метод PUT /settings возвращает обязательные поля после обновления")
+    fun shouldReturnRequiredFieldsAfterUpdate() {
+        val currentSettings = getCurrentSettings()
+
+        assumeSettingsChangesAllowed(currentSettings)
+
+        val json = putSettingsJson(currentSettings)
 
         SoftAssertions().apply {
             assertRequiredFieldPresent(this, value(json, "allowChanges"), ENDPOINT, "allowChanges", "CoreSettingsDto")
@@ -62,7 +77,13 @@ class SettingsSmokeTest : BaseTest() {
             }
 
             json.optionalList<Map<String, Any?>>("delivery.channels")?.forEachIndexed { index, channel ->
-                assertRequiredFieldPresent(this, channel["channel"], ENDPOINT, "delivery.channels[$index].channel", "DeliveryChannelSettingsDto")
+                assertRequiredFieldPresent(
+                    this,
+                    channel["channel"],
+                    ENDPOINT,
+                    "delivery.channels[$index].channel",
+                    "DeliveryChannelSettingsDto",
+                )
                 assertRequiredFieldPresent(
                     this,
                     channel["documentFormat"],
@@ -70,17 +91,33 @@ class SettingsSmokeTest : BaseTest() {
                     "delivery.channels[$index].documentFormat",
                     "DeliveryChannelSettingsDto",
                 )
-                assertRequiredFieldPresent(this, channel["enabled"], ENDPOINT, "delivery.channels[$index].enabled", "DeliveryChannelSettingsDto")
-                assertRequiredFieldPresent(this, channel["payloadType"], ENDPOINT, "delivery.channels[$index].payloadType", "DeliveryChannelSettingsDto")
+                assertRequiredFieldPresent(
+                    this,
+                    channel["enabled"],
+                    ENDPOINT,
+                    "delivery.channels[$index].enabled",
+                    "DeliveryChannelSettingsDto",
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    channel["payloadType"],
+                    ENDPOINT,
+                    "delivery.channels[$index].payloadType",
+                    "DeliveryChannelSettingsDto",
+                )
             }
         }.assertAll()
     }
 
     @Test
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /settings возвращает заполненные обязательные поля")
-    fun shouldReturnFilledRequiredFields() {
-        val json = getSettingsJson()
+    @DisplayName("Метод PUT /settings возвращает заполненные обязательные поля после обновления")
+    fun shouldReturnFilledRequiredFieldsAfterUpdate() {
+        val currentSettings = getCurrentSettings()
+
+        assumeSettingsChangesAllowed(currentSettings)
+
+        val json = putSettingsJson(currentSettings)
 
         SoftAssertions().apply {
             assertRequiredFieldFilled(this, value(json, "allowChanges"), ENDPOINT, "allowChanges", "CoreSettingsDto")
@@ -118,17 +155,60 @@ class SettingsSmokeTest : BaseTest() {
         }.assertAll()
     }
 
-    private fun getSettingsJson(): JsonPath {
-        val response: Response = superkassa.request()
-            .`when`()
-            .get("/settings")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+    private fun getCurrentSettings(): Map<String, Any?> {
+        val response: Response = reportStep("Получаем текущие настройки через GET /settings") {
+            superkassa.request()
+                .`when`()
+                .get("/settings")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
+
+        return response.jsonPath().getMap("")
+    }
+
+    private fun putSettingsJson(settings: Map<String, Any?>): JsonPath {
+        val response: Response = reportStep("Отправляем текущие настройки через PUT /settings") {
+            superkassa.request()
+                .body(settings)
+                .`when`()
+                .put("/settings")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
+    }
+
+    private fun assumeSettingsChangesAllowed(settings: Map<String, Any?>) {
+        assertThat(settings)
+            .withFailMessage(
+                "Контракт API нарушен: в ответе GET /settings отсутствует обязательное поле 'allowChanges'. " +
+                    "Поле 'allowChanges' помечено как required в Swagger-схеме CoreSettingsDto.",
+            )
+            .containsKey("allowChanges")
+
+        val allowChanges = settings["allowChanges"]
+
+        assertThat(allowChanges)
+            .withFailMessage(
+                "Контракт API нарушен: поле 'allowChanges' в ответе GET /settings должно иметь тип 'Boolean' " +
+                    "согласно Swagger-схеме CoreSettingsDto, сейчас вернулось значение '%s'.",
+                allowChanges,
+            )
+            .isInstanceOf(Boolean::class.javaObjectType)
+
+        Allure.step("Проверяем предусловие smoke-теста: allowChanges=true")
+        assumeTrue(
+            allowChanges == true,
+            "PUT /settings доступен только если в текущих настройках allowChanges=true, сейчас вернулся allowChanges=$allowChanges",
+        )
     }
 
     private fun value(json: JsonPath, path: String): Any? = json.get(path)
@@ -172,6 +252,6 @@ class SettingsSmokeTest : BaseTest() {
     }
 
     private companion object {
-        const val ENDPOINT = "GET /settings"
+        const val ENDPOINT = "PUT /settings"
     }
 }

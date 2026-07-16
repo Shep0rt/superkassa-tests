@@ -18,12 +18,16 @@ class AllureApiLoggingFilter : Filter {
         responseSpec: FilterableResponseSpecification,
         context: FilterContext,
     ): Response {
-        attachRequest(requestSpec)
+        val httpCall: Allure.ThrowableRunnable<Response> = Allure.ThrowableRunnable {
+            attachRequest(requestSpec)
 
-        val response = context.next(requestSpec, responseSpec)
+            val response = context.next(requestSpec, responseSpec)
 
-        attachResponse(response)
-        return response
+            attachResponse(response)
+            response
+        }
+
+        return Allure.step(httpStepName(requestSpec), httpCall)
     }
 
     private fun attachRequest(request: FilterableRequestSpecification) {
@@ -89,6 +93,9 @@ class AllureApiLoggingFilter : Filter {
         return curl.append(" ").append(shellQuote(request.uri)).toString()
     }
 
+    private fun httpStepName(request: FilterableRequestSpecification): String =
+        "HTTP ${request.method} ${request.uri}"
+
     private fun formatHeaders(headers: Headers?): String {
         if (headers == null || !headers.exist()) {
             return "<empty>"
@@ -111,7 +118,7 @@ class AllureApiLoggingFilter : Filter {
 
     private fun maskHeader(header: Header): String =
         if (header.name.lowercase(Locale.ROOT) in SENSITIVE_HEADERS) {
-            "***"
+            "****"
         } else {
             header.value
         }

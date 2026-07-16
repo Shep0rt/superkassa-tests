@@ -10,6 +10,7 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.DisplayName
@@ -26,12 +27,14 @@ class HealthSmokeTest : BaseTest() {
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /health возвращает HTTP 200 и JSON")
     fun shouldReturnHealthSuccessfully() {
-        superkassa.request()
-            .`when`()
-            .get("/health")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
+        reportStep("Получаем состояние сервиса через GET /health") {
+            superkassa.request()
+                .`when`()
+                .get("/health")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     @Test
@@ -59,14 +62,16 @@ class HealthSmokeTest : BaseTest() {
     }
 
     private fun getHealthJson(): JsonPath {
-        val response: Response = superkassa.request()
-            .`when`()
-            .get("/health")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Получаем состояние сервиса через GET /health") {
+            superkassa.request()
+                .`when`()
+                .get("/health")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
     }

@@ -13,6 +13,7 @@ import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
@@ -115,15 +116,15 @@ class KkmRegressionTest : BaseTest() {
         SoftAssertions().apply {
             assertOnlySwaggerFields(this, response, ENDPOINT, "PaginatedResponseKkmResponse", PAGINATED_KKM_RESPONSE_FIELDS)
 
-            items.forEachIndexed { index, item ->
-                assertOnlySwaggerFields(this, item, ENDPOINT, "items[$index]", KKM_RESPONSE_FIELDS)
+            items.forEach { item ->
+                assertOnlySwaggerFields(this, item, ENDPOINT, "KkmResponse", KKM_RESPONSE_FIELDS)
 
                 item.objectField("ofdServiceInfo")?.let { ofdServiceInfo ->
-                    assertOnlySwaggerFields(this, ofdServiceInfo, ENDPOINT, "items[$index].ofdServiceInfo", OFD_SERVICE_INFO_RESPONSE_FIELDS)
+                    assertOnlySwaggerFields(this, ofdServiceInfo, ENDPOINT, "OfdServiceInfoResponse", OFD_SERVICE_INFO_RESPONSE_FIELDS)
                 }
 
                 item.objectField("branding")?.let { branding ->
-                    assertOnlySwaggerFields(this, branding, ENDPOINT, "items[$index].branding", RECEIPT_BRANDING_RESPONSE_FIELDS)
+                    assertOnlySwaggerFields(this, branding, ENDPOINT, "ReceiptBrandingResponse", RECEIPT_BRANDING_RESPONSE_FIELDS)
                 }
             }
         }.assertAll()
@@ -203,13 +204,11 @@ class KkmRegressionTest : BaseTest() {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("Метод GET /kkm ищет ККМ по заводскому номеру")
     fun shouldSearchByFactoryNumber() {
-        Allure.step("Получаем контрольную ККМ из списка GET /kkm?limit=1&offset=0")
         val existingKkm = firstKkmOrSkip()
         val factoryNumber = existingKkm["factoryNumber"] as? String
 
         assumeTrue(!factoryNumber.isNullOrBlank(), "В первой ККМ нет factoryNumber для проверки search")
 
-        Allure.step("Ищем ККМ по factoryNumber='$factoryNumber' через GET /kkm?search=$factoryNumber")
         val json = getKkmJson(search = factoryNumber)
         val items = json.getList<Map<String, Any?>>("items")
 
@@ -261,13 +260,15 @@ class KkmRegressionTest : BaseTest() {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("Метод GET /kkm возвращает 400 для невалидных query-параметров")
     fun shouldReturnBadRequestForInvalidQueryParams(paramName: String, paramValue: String) {
-        superkassa.request()
-            .queryParam(paramName, paramValue)
-            .`when`()
-            .get("/kkm")
-            .then()
-            .shouldHaveStatus(400, "невалидный запрос")
-            .contentType(ContentType.JSON)
+        reportStep("Проверяем GET /kkm с невалидным query-параметром $paramName=$paramValue") {
+            superkassa.request()
+                .queryParam(paramName, paramValue)
+                .`when`()
+                .get("/kkm")
+                .then()
+                .shouldHaveStatus(400, "невалидный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     @ParameterizedTest(name = "HTTP {0} /kkm возвращает 405")
@@ -275,11 +276,13 @@ class KkmRegressionTest : BaseTest() {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("Метод /kkm возвращает 405 для HTTP-методов кроме GET")
     fun shouldReturnMethodNotAllowedForNonGetMethods(method: Method) {
-        superkassa.request()
-            .`when`()
-            .request(method, "/kkm")
-            .then()
-            .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        reportStep("Проверяем, что HTTP $method /kkm не поддерживается") {
+            superkassa.request()
+                .`when`()
+                .request(method, "/kkm")
+                .then()
+                .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        }
     }
 
     private fun firstKkmOrSkip(): Map<String, Any?> {
@@ -307,16 +310,42 @@ class KkmRegressionTest : BaseTest() {
         sortBy?.let { request.queryParam("sortBy", it) }
         order?.let { request.queryParam("order", it) }
 
-        val response: Response = request
-            .`when`()
-            .get("/kkm")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep(kkmListStepName(limit, offset, state, search, sortBy, order)) {
+            request
+                .`when`()
+                .get("/kkm")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
+    }
+
+    private fun kkmListStepName(
+        limit: Int?,
+        offset: Int?,
+        state: String?,
+        search: String?,
+        sortBy: String?,
+        order: String?,
+    ): String {
+        val queryParams = listOfNotNull(
+            limit?.let { "limit=$it" },
+            offset?.let { "offset=$it" },
+            state?.let { "state=$it" },
+            search?.let { "search=$it" },
+            sortBy?.let { "sortBy=$it" },
+            order?.let { "order=$it" },
+        )
+
+        return if (queryParams.isEmpty()) {
+            "Получаем список ККМ через GET /kkm"
+        } else {
+            "Получаем список ККМ через GET /kkm?${queryParams.joinToString("&")}"
+        }
     }
 
     private fun assertFieldType(
@@ -371,13 +400,13 @@ class KkmRegressionTest : BaseTest() {
         softly: SoftAssertions,
         item: Map<String, Any?>,
         endpoint: String,
-        objectPath: String,
+        schemaName: String,
         allowedFields: Set<String>,
     ) {
         val unexpectedFields = item.keys - allowedFields
 
         softly.assertThat(unexpectedFields)
-            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, objectPath, unexpectedFields))
+            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, schemaName, unexpectedFields))
             .isEmpty()
     }
 

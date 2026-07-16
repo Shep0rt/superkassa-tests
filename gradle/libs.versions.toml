@@ -1,6 +1,6 @@
 [versions]
 allure-java = "2.35.3"
-allure-report = "3.4.1"
+allure-report = "3.14.3"
 allure-gradle-plugin = "4.1.0"
 assertj = "3.27.7"
 awaitility = "4.3.0"

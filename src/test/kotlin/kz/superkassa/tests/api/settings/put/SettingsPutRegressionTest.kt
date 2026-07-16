@@ -1,4 +1,4 @@
-package kz.superkassa.tests.api.settings
+package kz.superkassa.tests.api.settings.put
 
 import io.qameta.allure.Allure
 import io.qameta.allure.Feature
@@ -12,6 +12,7 @@ import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
@@ -116,38 +117,38 @@ class SettingsPutRegressionTest : BaseTest() {
             assertOnlySwaggerFields(this, response, ENDPOINT, "CoreSettingsDto", CORE_SETTINGS_FIELDS)
 
             response.objectField("storage")?.let { storage ->
-                assertOnlySwaggerFields(this, storage, ENDPOINT, "storage", STORAGE_SETTINGS_FIELDS)
+                assertOnlySwaggerFields(this, storage, ENDPOINT, "StorageSettingsDto", STORAGE_SETTINGS_FIELDS)
             }
 
             response.objectField("delivery")?.let { delivery ->
-                assertOnlySwaggerFields(this, delivery, ENDPOINT, "delivery", DELIVERY_SETTINGS_FIELDS)
+                assertOnlySwaggerFields(this, delivery, ENDPOINT, "DeliverySettingsDto", DELIVERY_SETTINGS_FIELDS)
 
-                delivery.listField("channels").forEachIndexed { index, channel ->
-                    assertOnlySwaggerFields(this, channel, ENDPOINT, "delivery.channels[$index]", DELIVERY_CHANNEL_SETTINGS_FIELDS)
+                delivery.listField("channels").forEach { channel ->
+                    assertOnlySwaggerFields(this, channel, ENDPOINT, "DeliveryChannelSettingsDto", DELIVERY_CHANNEL_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("print")?.let { print ->
-                    assertOnlySwaggerFields(this, print, ENDPOINT, "delivery.print", PRINT_DELIVERY_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, print, ENDPOINT, "PrintDeliverySettingsDto", PRINT_DELIVERY_SETTINGS_FIELDS)
 
                     print.objectField("connection")?.let { connection ->
-                        assertOnlySwaggerFields(this, connection, ENDPOINT, "delivery.print.connection", PRINT_CONNECTION_SETTINGS_FIELDS)
+                        assertOnlySwaggerFields(this, connection, ENDPOINT, "PrinterConnectionSettingsDto", PRINT_CONNECTION_SETTINGS_FIELDS)
                     }
                 }
 
                 delivery.objectField("email")?.let { email ->
-                    assertOnlySwaggerFields(this, email, ENDPOINT, "delivery.email", EMAIL_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, email, ENDPOINT, "EmailProviderSettingsDto", EMAIL_PROVIDER_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("sms")?.let { sms ->
-                    assertOnlySwaggerFields(this, sms, ENDPOINT, "delivery.sms", SMS_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, sms, ENDPOINT, "SmsProviderSettingsDto", SMS_PROVIDER_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("telegram")?.let { telegram ->
-                    assertOnlySwaggerFields(this, telegram, ENDPOINT, "delivery.telegram", TELEGRAM_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, telegram, ENDPOINT, "TelegramProviderSettingsDto", TELEGRAM_PROVIDER_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("whatsapp")?.let { whatsapp ->
-                    assertOnlySwaggerFields(this, whatsapp, ENDPOINT, "delivery.whatsapp", WHATSAPP_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, whatsapp, ENDPOINT, "WhatsAppProviderSettingsDto", WHATSAPP_PROVIDER_SETTINGS_FIELDS)
                 }
             }
         }.assertAll()
@@ -204,14 +205,15 @@ class SettingsPutRegressionTest : BaseTest() {
             putAll(bodyOverride)
         }
 
-        Allure.step("Отправляем невалидное тело PUT /settings: $caseName")
-        superkassa.request()
-            .body(invalidBody)
-            .`when`()
-            .put("/settings")
-            .then()
-            .shouldHaveStatus(400, "невалидный запрос")
-            .contentType(ContentType.JSON)
+        reportStep("Отправляем невалидное тело через PUT /settings: $caseName") {
+            superkassa.request()
+                .body(invalidBody)
+                .`when`()
+                .put("/settings")
+                .then()
+                .shouldHaveStatus(400, "невалидный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     @Test
@@ -222,38 +224,44 @@ class SettingsPutRegressionTest : BaseTest() {
 
         assumeSettingsChangesAllowed(currentSettings)
 
-        superkassa.request()
-            .body(emptyMap<String, Any?>())
-            .`when`()
-            .put("/settings")
-            .then()
-            .shouldHaveStatus(400, "невалидный запрос")
-            .contentType(ContentType.JSON)
+        reportStep("Отправляем пустое тело через PUT /settings") {
+            superkassa.request()
+                .body(emptyMap<String, Any?>())
+                .`when`()
+                .put("/settings")
+                .then()
+                .shouldHaveStatus(400, "невалидный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     private fun getCurrentSettings(): Map<String, Any?> {
-        val response: Response = superkassa.request()
-            .`when`()
-            .get("/settings")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Получаем текущие настройки через GET /settings") {
+            superkassa.request()
+                .`when`()
+                .get("/settings")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath().getMap("")
     }
 
     private fun putSettingsJson(settings: Map<String, Any?>): JsonPath {
-        val response: Response = superkassa.request()
-            .body(settings)
-            .`when`()
-            .put("/settings")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Отправляем текущие настройки через PUT /settings") {
+            superkassa.request()
+                .body(settings)
+                .`when`()
+                .put("/settings")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
     }
@@ -386,13 +394,13 @@ class SettingsPutRegressionTest : BaseTest() {
         softly: SoftAssertions,
         item: Map<String, Any?>,
         endpoint: String,
-        objectPath: String,
+        schemaName: String,
         allowedFields: Set<String>,
     ) {
         val unexpectedFields = item.keys - allowedFields
 
         softly.assertThat(unexpectedFields)
-            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, objectPath, unexpectedFields))
+            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, schemaName, unexpectedFields))
             .isEmpty()
     }
 

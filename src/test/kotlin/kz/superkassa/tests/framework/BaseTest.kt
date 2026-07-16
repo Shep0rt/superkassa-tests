@@ -2,6 +2,7 @@ package kz.superkassa.tests.framework
 
 import kz.superkassa.tests.framework.config.TestConfig
 import kz.superkassa.tests.framework.http.SuperkassaApiClient
+import kz.superkassa.tests.framework.kkm.KkmAuthSupport
 import kz.superkassa.tests.framework.support.Polling
 import io.restassured.response.ValidatableResponse
 import org.assertj.core.api.Assertions.assertThat
@@ -10,6 +11,8 @@ import org.assertj.core.api.Assertions.assertThat
 abstract class BaseTest {
     protected val superkassa = SuperkassaApiClient(CONFIG)
     protected val polling = Polling(CONFIG)
+    protected val testConfig: TestConfig = CONFIG
+    protected val kkmAuth = KkmAuthSupport(superkassa, CONFIG)
 
     protected fun ValidatableResponse.shouldHaveStatus(expectedStatus: Int, scenario: String): ValidatableResponse {
         val actualStatus = extract().response().statusCode

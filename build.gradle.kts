@@ -138,6 +138,12 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     systemProperty("file.encoding", "UTF-8")
     systemProperty("allure.results.directory", layout.buildDirectory.dir("allure-results").get().asFile)
+    System.getProperties()
+        .stringPropertyNames()
+        .filter { it.startsWith("superkassa.") || it.startsWith("database.") || it.startsWith("timeouts.") }
+        .forEach { propertyName ->
+            systemProperty(propertyName, System.getProperty(propertyName))
+        }
     testLogging {
         events("failed", "skipped")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL

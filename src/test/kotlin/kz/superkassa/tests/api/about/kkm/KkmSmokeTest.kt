@@ -10,6 +10,7 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
@@ -27,12 +28,14 @@ class KkmSmokeTest : BaseTest() {
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /kkm возвращает HTTP 200 и JSON")
     fun shouldReturnKkmListSuccessfully() {
-        superkassa.request()
-            .`when`()
-            .get("/kkm")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
+        reportStep("Получаем список ККМ через GET /kkm") {
+            superkassa.request()
+                .`when`()
+                .get("/kkm")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     @Test
@@ -148,14 +151,16 @@ class KkmSmokeTest : BaseTest() {
     }
 
     private fun getKkmJson(): JsonPath {
-        val response: Response = superkassa.request()
-            .`when`()
-            .get("/kkm")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Получаем список ККМ через GET /kkm") {
+            superkassa.request()
+                .`when`()
+                .get("/kkm")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
     }

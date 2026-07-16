@@ -1,4 +1,4 @@
-package kz.superkassa.tests.api.settings
+package kz.superkassa.tests.api.settings.get
 
 import io.qameta.allure.Feature
 import io.qameta.allure.Owner
@@ -12,6 +12,7 @@ import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.DisplayName
@@ -107,38 +108,38 @@ class SettingsRegressionTest : BaseTest() {
             assertOnlySwaggerFields(this, response, ENDPOINT, "CoreSettingsDto", CORE_SETTINGS_FIELDS)
 
             response.objectField("storage")?.let { storage ->
-                assertOnlySwaggerFields(this, storage, ENDPOINT, "storage", STORAGE_SETTINGS_FIELDS)
+                assertOnlySwaggerFields(this, storage, ENDPOINT, "StorageSettingsDto", STORAGE_SETTINGS_FIELDS)
             }
 
             response.objectField("delivery")?.let { delivery ->
-                assertOnlySwaggerFields(this, delivery, ENDPOINT, "delivery", DELIVERY_SETTINGS_FIELDS)
+                assertOnlySwaggerFields(this, delivery, ENDPOINT, "DeliverySettingsDto", DELIVERY_SETTINGS_FIELDS)
 
-                delivery.listField("channels").forEachIndexed { index, channel ->
-                    assertOnlySwaggerFields(this, channel, ENDPOINT, "delivery.channels[$index]", DELIVERY_CHANNEL_SETTINGS_FIELDS)
+                delivery.listField("channels").forEach { channel ->
+                    assertOnlySwaggerFields(this, channel, ENDPOINT, "DeliveryChannelSettingsDto", DELIVERY_CHANNEL_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("print")?.let { print ->
-                    assertOnlySwaggerFields(this, print, ENDPOINT, "delivery.print", PRINT_DELIVERY_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, print, ENDPOINT, "PrintDeliverySettingsDto", PRINT_DELIVERY_SETTINGS_FIELDS)
 
                     print.objectField("connection")?.let { connection ->
-                        assertOnlySwaggerFields(this, connection, ENDPOINT, "delivery.print.connection", PRINT_CONNECTION_SETTINGS_FIELDS)
+                        assertOnlySwaggerFields(this, connection, ENDPOINT, "PrinterConnectionSettingsDto", PRINT_CONNECTION_SETTINGS_FIELDS)
                     }
                 }
 
                 delivery.objectField("email")?.let { email ->
-                    assertOnlySwaggerFields(this, email, ENDPOINT, "delivery.email", EMAIL_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, email, ENDPOINT, "EmailProviderSettingsDto", EMAIL_PROVIDER_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("sms")?.let { sms ->
-                    assertOnlySwaggerFields(this, sms, ENDPOINT, "delivery.sms", SMS_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, sms, ENDPOINT, "SmsProviderSettingsDto", SMS_PROVIDER_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("telegram")?.let { telegram ->
-                    assertOnlySwaggerFields(this, telegram, ENDPOINT, "delivery.telegram", TELEGRAM_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, telegram, ENDPOINT, "TelegramProviderSettingsDto", TELEGRAM_PROVIDER_SETTINGS_FIELDS)
                 }
 
                 delivery.objectField("whatsapp")?.let { whatsapp ->
-                    assertOnlySwaggerFields(this, whatsapp, ENDPOINT, "delivery.whatsapp", WHATSAPP_PROVIDER_SETTINGS_FIELDS)
+                    assertOnlySwaggerFields(this, whatsapp, ENDPOINT, "WhatsAppProviderSettingsDto", WHATSAPP_PROVIDER_SETTINGS_FIELDS)
                 }
             }
         }.assertAll()
@@ -180,22 +181,26 @@ class SettingsRegressionTest : BaseTest() {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("Метод /settings возвращает 405 для HTTP-методов кроме GET и PUT")
     fun shouldReturnMethodNotAllowedForUnsupportedMethods(method: Method) {
-        superkassa.request()
-            .`when`()
-            .request(method, "/settings")
-            .then()
-            .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        reportStep("Проверяем, что HTTP $method /settings не поддерживается") {
+            superkassa.request()
+                .`when`()
+                .request(method, "/settings")
+                .then()
+                .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        }
     }
 
     private fun getSettingsJson(): JsonPath {
-        val response: Response = superkassa.request()
-            .`when`()
-            .get("/settings")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Получаем настройки Superkassa через GET /settings") {
+            superkassa.request()
+                .`when`()
+                .get("/settings")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
     }
@@ -303,13 +308,13 @@ class SettingsRegressionTest : BaseTest() {
         softly: SoftAssertions,
         item: Map<String, Any?>,
         endpoint: String,
-        objectPath: String,
+        schemaName: String,
         allowedFields: Set<String>,
     ) {
         val unexpectedFields = item.keys - allowedFields
 
         softly.assertThat(unexpectedFields)
-            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, objectPath, unexpectedFields))
+            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, schemaName, unexpectedFields))
             .isEmpty()
     }
 

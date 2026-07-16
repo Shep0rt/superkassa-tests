@@ -41,6 +41,10 @@ Gradle-задачи используют пересечение тегов. На
 Команды ниже повторяют привычный сценарий: сначала запускаем нужный сьют, затем строим
 Allure 3 отчет из полученных результатов.
 
+Перед запуском API-тестов в Superkassa должны быть заранее созданы несколько ККМ.
+Тесты используют существующие ККМ как тестовые данные для проверок списка касс,
+пользователей и операций над конкретной ККМ.
+
 Проект использует Allure Gradle Plugin и скачивает runtime Allure 3 во время сборки.
 Устанавливать Node.js локально для генерации отчета не нужно.
 
@@ -49,7 +53,7 @@ Allure 3 отчет из полученных результатов.
 ```bash
 ./gradlew --continue clean apiSmokeTest allureReport \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.api-token=local-token
+  -Dsuperkassa.auth-pin=local-token
 ```
 
 Готовый отчет будет в:
@@ -69,7 +73,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiSmokeTest allureServe \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.api-token=local-token
+  -Dsuperkassa.auth-pin=local-token
 ```
 
 `allureServe` поднимает локальный web-сервер и держит процесс Gradle активным,
@@ -80,7 +84,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiRegressionTest allureReport \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.api-token=local-token
+  -Dsuperkassa.auth-pin=local-token
 ```
 
 Готовый отчет будет в:
@@ -100,7 +104,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiRegressionTest allureServe \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.api-token=local-token
+  -Dsuperkassa.auth-pin=local-token
 ```
 
 `allureServe` поднимает локальный web-сервер только по результатам API regression-сьюта.
@@ -110,7 +114,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiSmokeTest apiRegressionTest allureReport \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.api-token=local-token
+  -Dsuperkassa.auth-pin=local-token
 ```
 
 ### 6. API smoke and regression + web-сервер Allure
@@ -118,7 +122,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiSmokeTest apiRegressionTest allureServe \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.api-token=local-token
+  -Dsuperkassa.auth-pin=local-token
 ```
 
 Для запуска без очистки достаточно убрать `clean`.
@@ -131,7 +135,12 @@ Runtime-конфигурация загружается из `application.conf` 
 Основные параметры:
 
 - `-Dsuperkassa.base-url=http://localhost:8080` или переменная окружения `SUPERKASSA_BASE_URL`.
-- `-Dsuperkassa.api-token=local-token` или переменная окружения `SUPERKASSA_API_TOKEN`.
+- `-Dsuperkassa.auth-pin=local-token` или переменная окружения `SUPERKASSA_AUTH_PIN`.
+
+Для сценариев, которым нужны права администратора ККМ, `superkassa.auth-pin` должен быть
+валидным текущим PIN администратора. Если у администратора стоит стандартный PIN, тесты
+могут подготовить пользователя и заменить PIN на тестовый `0808`, после чего использовать
+его для проверок режима программирования.
 
 Секреты нельзя коммитить в репозиторий. Токены, пароли и доступы к стендам должны передаваться
 через переменные окружения локально или через secret-переменные CI/CD.

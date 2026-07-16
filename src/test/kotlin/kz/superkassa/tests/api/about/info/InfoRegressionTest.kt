@@ -12,6 +12,7 @@ import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.DisplayName
@@ -74,13 +75,13 @@ class InfoRegressionTest : BaseTest() {
         SoftAssertions().apply {
             assertOnlySwaggerFields(this, response, ENDPOINT, "InfoResponse", INFO_RESPONSE_FIELDS)
             response.objectField("storage")?.let { storage ->
-                assertOnlySwaggerFields(this, storage, ENDPOINT, "storage", STORAGE_FIELDS)
+                assertOnlySwaggerFields(this, storage, ENDPOINT, "Storage", STORAGE_FIELDS)
             }
             response.objectField("statistics")?.let { statistics ->
-                assertOnlySwaggerFields(this, statistics, ENDPOINT, "statistics", STATISTICS_FIELDS)
+                assertOnlySwaggerFields(this, statistics, ENDPOINT, "Statistics", STATISTICS_FIELDS)
             }
             response.objectField("features")?.let { features ->
-                assertOnlySwaggerFields(this, features, ENDPOINT, "features", FEATURES_FIELDS)
+                assertOnlySwaggerFields(this, features, ENDPOINT, "Features", FEATURES_FIELDS)
             }
         }.assertAll()
     }
@@ -133,22 +134,26 @@ class InfoRegressionTest : BaseTest() {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("Метод /info возвращает 405 для HTTP-методов кроме GET")
     fun shouldReturnMethodNotAllowedForNonGetMethods(method: Method) {
-        superkassa.request()
-            .`when`()
-            .request(method, "/info")
-            .then()
-            .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        reportStep("Проверяем, что HTTP $method /info не поддерживается") {
+            superkassa.request()
+                .`when`()
+                .request(method, "/info")
+                .then()
+                .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        }
     }
 
     private fun getInfoJson(): JsonPath {
-        val response: Response = superkassa.request()
-            .`when`()
-            .get("/info")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Получаем информацию о Superkassa через GET /info") {
+            superkassa.request()
+                .`when`()
+                .get("/info")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
     }
@@ -207,13 +212,13 @@ class InfoRegressionTest : BaseTest() {
         softly: SoftAssertions,
         item: Map<String, Any?>,
         endpoint: String,
-        objectPath: String,
+        schemaName: String,
         allowedFields: Set<String>,
     ) {
         val unexpectedFields = item.keys - allowedFields
 
         softly.assertThat(unexpectedFields)
-            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, objectPath, unexpectedFields))
+            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, schemaName, unexpectedFields))
             .isEmpty()
     }
 

@@ -12,6 +12,7 @@ import io.restassured.response.Response
 import kz.superkassa.tests.framework.BaseTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
+import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.DisplayName
@@ -127,13 +128,15 @@ class HealthRegressionTest : BaseTest() {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("Метод GET /health возвращает 400 для невалидного checkOfd")
     fun shouldReturnBadRequestForInvalidCheckOfd() {
-        superkassa.request()
-            .queryParam("checkOfd", "invalid")
-            .`when`()
-            .get("/health")
-            .then()
-            .shouldHaveStatus(400, "невалидный запрос")
-            .contentType(ContentType.JSON)
+        reportStep("Проверяем GET /health с невалидным checkOfd") {
+            superkassa.request()
+                .queryParam("checkOfd", "invalid")
+                .`when`()
+                .get("/health")
+                .then()
+                .shouldHaveStatus(400, "невалидный запрос")
+                .contentType(ContentType.JSON)
+        }
     }
 
     @ParameterizedTest(name = "HTTP {0} /health возвращает 405")
@@ -141,11 +144,13 @@ class HealthRegressionTest : BaseTest() {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("Метод /health возвращает 405 для HTTP-методов кроме GET")
     fun shouldReturnMethodNotAllowedForNonGetMethods(method: Method) {
-        superkassa.request()
-            .`when`()
-            .request(method, "/health")
-            .then()
-            .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        reportStep("Проверяем, что HTTP $method /health не поддерживается") {
+            superkassa.request()
+                .`when`()
+                .request(method, "/health")
+                .then()
+                .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+        }
     }
 
     private fun getHealthJson(
@@ -159,14 +164,16 @@ class HealthRegressionTest : BaseTest() {
         ofdEnvironment?.let { request.queryParam("ofdEnvironment", it) }
         ofdProvider?.let { request.queryParam("ofdProvider", it) }
 
-        val response: Response = request
-            .`when`()
-            .get("/health")
-            .then()
-            .shouldHaveStatus(200, "успешный запрос")
-            .contentType(ContentType.JSON)
-            .extract()
-            .response()
+        val response: Response = reportStep("Получаем состояние сервиса через GET /health") {
+            request
+                .`when`()
+                .get("/health")
+                .then()
+                .shouldHaveStatus(200, "успешный запрос")
+                .contentType(ContentType.JSON)
+                .extract()
+                .response()
+        }
 
         return response.jsonPath()
     }
@@ -192,13 +199,13 @@ class HealthRegressionTest : BaseTest() {
         softly: SoftAssertions,
         item: Map<String, Any?>,
         endpoint: String,
-        objectPath: String,
+        schemaName: String,
         allowedFields: Set<String>,
     ) {
         val unexpectedFields = item.keys - allowedFields
 
         softly.assertThat(unexpectedFields)
-            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, objectPath, unexpectedFields))
+            .withFailMessage(ApiContractErrorMessages.unexpectedSwaggerFields(endpoint, schemaName, unexpectedFields))
             .isEmpty()
     }
 

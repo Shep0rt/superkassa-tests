@@ -12,7 +12,7 @@ abstract class BaseTest {
     protected val superkassa = SuperkassaApiClient(CONFIG)
     protected val polling = Polling(CONFIG)
     protected val testConfig: TestConfig = CONFIG
-    protected val kkmAuth = KkmAuthSupport(superkassa, CONFIG)
+    protected val kkmAuth = KkmAuthSupport(superkassa)
 
     protected fun ValidatableResponse.shouldHaveStatus(expectedStatus: Int, scenario: String): ValidatableResponse {
         val actualStatus = extract().response().statusCode

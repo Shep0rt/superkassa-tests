@@ -14,6 +14,7 @@ import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.SoftAssertions
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
@@ -22,8 +23,17 @@ import org.junit.jupiter.api.Test
 @Story("POST /kkm/{kkmId}/programming/enter")
 @Owner("Pavel Michka")
 @DisplayName("POST /kkm/{kkmId}/programming/enter: smoke-проверки входа в режим программирования")
-@Suppress("SameParameterValue")
+@Suppress("SameParameterValue", "NonAsciiCharacters")
 class KkmProgrammingEnterSmokeTest : BaseTest() {
+    private var kkmToExitAfterTest: PreparedKkmAuth? = null
+
+    @AfterEach
+    fun `Возвращаем ККМ из режима программирования после проверки`() {
+        val preparedKkm = kkmToExitAfterTest ?: return
+        kkmToExitAfterTest = null
+        exitProgramming(preparedKkm)
+    }
+
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает HTTP 200 и JSON")
@@ -97,12 +107,8 @@ class KkmProgrammingEnterSmokeTest : BaseTest() {
 
     private fun withProgrammingMode(preparedKkm: PreparedKkmAuth, action: (JsonPath) -> Unit) {
         val json = enterProgrammingJson(preparedKkm)
-
-        try {
-            action(json)
-        } finally {
-            exitProgramming(preparedKkm)
-        }
+        kkmToExitAfterTest = preparedKkm
+        action(json)
     }
 
     private fun enterProgrammingJson(preparedKkm: PreparedKkmAuth): JsonPath {

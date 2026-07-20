@@ -17,7 +17,9 @@ import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.SoftAssertions
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -27,8 +29,17 @@ import org.junit.jupiter.params.provider.EnumSource
 @Story("POST /kkm/{kkmId}/programming/enter")
 @Owner("Pavel Michka")
 @DisplayName("POST /kkm/{kkmId}/programming/enter: регрессионные проверки входа в режим программирования")
-@Suppress("SameParameterValue")
+@Suppress("SameParameterValue", "NonAsciiCharacters")
 class KkmProgrammingEnterRegressionTest : BaseTest() {
+    private var kkmToExitAfterTest: PreparedKkmAuth? = null
+
+    @AfterEach
+    fun `Возвращаем ККМ из режима программирования после проверки`() {
+        val preparedKkm = kkmToExitAfterTest ?: return
+        kkmToExitAfterTest = null
+        exitProgramming(preparedKkm)
+    }
+
     @Test
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает поля ожидаемых типов")
@@ -172,35 +183,43 @@ class KkmProgrammingEnterRegressionTest : BaseTest() {
         }
     }
 
-    @Test
-    @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает 401 без Authorization")
-    fun shouldReturnUnauthorizedWithoutAuthorization() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
+    @Nested
+    @ApiRegression
+    @Feature("API")
+    @Story("POST /kkm/{kkmId}/programming/enter")
+    @Owner("Pavel Michka")
+    @DisplayName("Проверки авторизации POST /kkm/{kkmId}/programming/enter")
+    inner class AuthorizationRegressionTests {
+        @Test
+        @Severity(SeverityLevel.NORMAL)
+        @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает 401 без Authorization")
+        fun shouldReturnUnauthorizedWithoutAuthorization() {
+            val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
 
-        reportStep("Проверяем POST /kkm/${preparedKkm.kkmId}/programming/enter без Authorization") {
-            superkassa.requestWithoutAuthorization()
-                .`when`()
-                .post(enterProgrammingPath(preparedKkm.kkmId))
-                .then()
-                .shouldHaveStatus(401, "запрос без Authorization")
-                .contentType(ContentType.JSON)
+            reportStep("Проверяем POST /kkm/${preparedKkm.kkmId}/programming/enter без Authorization") {
+                superkassa.requestWithoutAuthorization()
+                    .`when`()
+                    .post(enterProgrammingPath(preparedKkm.kkmId))
+                    .then()
+                    .shouldHaveStatus(401, "запрос без Authorization")
+                    .contentType(ContentType.JSON)
+            }
         }
-    }
 
-    @Test
-    @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает 403 для неверного PIN")
-    fun shouldReturnForbiddenForInvalidPin() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
+        @Test
+        @Severity(SeverityLevel.NORMAL)
+        @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает 403 для неверного PIN")
+        fun shouldReturnForbiddenForInvalidPin() {
+            val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
 
-        reportStep("Проверяем POST /kkm/${preparedKkm.kkmId}/programming/enter с неверным PIN") {
-            superkassa.request(INVALID_PIN)
-                .`when`()
-                .post(enterProgrammingPath(preparedKkm.kkmId))
-                .then()
-                .shouldHaveStatus(403, "запрос с неверным PIN")
-                .contentType(ContentType.JSON)
+            reportStep("Проверяем POST /kkm/${preparedKkm.kkmId}/programming/enter с неверным PIN") {
+                superkassa.request(INVALID_PIN)
+                    .`when`()
+                    .post(enterProgrammingPath(preparedKkm.kkmId))
+                    .then()
+                    .shouldHaveStatus(403, "запрос с неверным PIN")
+                    .contentType(ContentType.JSON)
+            }
         }
     }
 
@@ -238,12 +257,8 @@ class KkmProgrammingEnterRegressionTest : BaseTest() {
 
     private fun withProgrammingMode(preparedKkm: PreparedKkmAuth, action: (JsonPath) -> Unit) {
         val json = enterProgrammingJson(preparedKkm)
-
-        try {
-            action(json)
-        } finally {
-            exitProgramming(preparedKkm)
-        }
+        kkmToExitAfterTest = preparedKkm
+        action(json)
     }
 
     private fun enterProgrammingJson(preparedKkm: PreparedKkmAuth): JsonPath {

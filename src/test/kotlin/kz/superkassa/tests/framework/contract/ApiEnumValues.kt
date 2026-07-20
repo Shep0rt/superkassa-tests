@@ -13,6 +13,7 @@ object ApiEnumValues {
     val VAT_GROUPS = setOf("NO_VAT", "VAT_0", "VAT_12", "VAT_16")
     val OFD_ENVIRONMENTS = setOf("DEV", "TEST", "PROD")
     val OFD_IDS = setOf("KAZAKHTELECOM")
+    val USER_ROLES = setOf("ADMIN", "CASHIER")
 
     val HEALTH_OFD_STATUS_PREFIXES = setOf("OK", "DEGRADED", "SKIPPED", "ERROR")
 }

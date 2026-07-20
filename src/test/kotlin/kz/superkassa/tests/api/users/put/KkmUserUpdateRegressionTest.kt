@@ -89,18 +89,35 @@ class KkmUserUpdateRegressionTest : BaseTest() {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("nullableRequestFields")
+    @MethodSource("nullOnlyRequestFields")
     @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} принимает null в nullable-полях запроса")
-    fun shouldAcceptNullForNullableRequestField(caseName: String, fieldName: String) {
-        withUpdatedUser(mapOf(fieldName to null), caseName) { }
+    @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400, если единственное поле содержит null")
+    fun shouldReturnBadRequestForNullOnlyRequestField(caseName: String, fieldName: String) {
+        val createdUser = prepareUserForUpdate()
+
+        putUserExpectingRejection(
+            createdUser = createdUser,
+            body = mapOf(fieldName to null),
+            stepName = "Отправляем невалидное тело PUT ${userPath(createdUser)}: $caseName",
+            expectedStatus = 400,
+            scenario = caseName,
+        )
     }
 
     @Test
     @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} принимает пустой объект UserUpdateRequest")
-    fun shouldAcceptEmptyUpdateObject() {
-        withUpdatedUser(emptyMap()) { }
+    @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 для пустого объекта UserUpdateRequest")
+    fun shouldReturnBadRequestForEmptyUpdateObject() {
+        val createdUser = prepareUserForUpdate()
+        val scenario = "в UserUpdateRequest не передано ни одного поля для изменения"
+
+        putUserExpectingRejection(
+            createdUser = createdUser,
+            body = emptyMap(),
+            stepName = "Отправляем пустой объект PUT ${userPath(createdUser)}: $scenario",
+            expectedStatus = 400,
+            scenario = scenario,
+        )
     }
 
     @ParameterizedTest(name = "{0}")
@@ -492,10 +509,10 @@ class KkmUserUpdateRegressionTest : BaseTest() {
         )
 
         @JvmStatic
-        fun nullableRequestFields(): Stream<Arguments> = Stream.of(
-            Arguments.of("поле name содержит допустимое значение null", "name"),
-            Arguments.of("поле role содержит допустимое значение null", "role"),
-            Arguments.of("поле userPin содержит допустимое значение null", "userPin"),
+        fun nullOnlyRequestFields(): Stream<Arguments> = Stream.of(
+            Arguments.of("поле name содержит null, других изменений нет", "name"),
+            Arguments.of("поле role содержит null, других изменений нет", "role"),
+            Arguments.of("поле userPin содержит null, других изменений нет", "userPin"),
         )
 
         @JvmStatic

@@ -8,13 +8,14 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.kkm.KkmAuthenticatedTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.ResourceAccessMode
@@ -29,13 +30,24 @@ import java.util.concurrent.ThreadLocalRandom
 @DisplayName("PUT /kkm/{kkmId}/users/{userId}: smoke-проверки редактирования пользователя ККМ")
 @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
 @Suppress("SameParameterValue", "NonAsciiCharacters")
-class KkmUserUpdateSmokeTest : BaseTest() {
+class KkmUserUpdateSmokeTest : KkmAuthenticatedTest() {
     private val deferredCleanupActions = mutableListOf<() -> Unit>()
+    private lateinit var createdUser: CreatedUser
+
+    @BeforeEach
+    fun `Создаем пользователя для редактирования`() {
+        createdUser = prepareUserForUpdate()
+        deferredCleanupActions += { deleteCreatedUser(createdUser) }
+    }
 
     @AfterEach
     fun `Очищаем тестовые данные после проверки`() {
         val cleanups = deferredCleanupActions.asReversed().toList()
         deferredCleanupActions.clear()
+        if (cleanups.isEmpty()) {
+            reportStep("Очистка не требуется: пользователь для редактирования не был подготовлен") { }
+            return
+        }
         cleanups.forEach { cleanup -> cleanup() }
     }
 
@@ -77,19 +89,15 @@ class KkmUserUpdateSmokeTest : BaseTest() {
     }
 
     private fun withUpdatedUser(assertions: (Response) -> Unit) {
-        val createdUser = prepareUserForUpdate()
-        deferredCleanupActions += { deleteCreatedUser(createdUser) }
-
         val response = updateUser(createdUser)
         assertions(response)
     }
 
     private fun prepareUserForUpdate(): CreatedUser {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
         val request = newUserRequest()
         val response: Response = reportStep(
             "Готовим предусловие: создаем пользователя role=${request.role} через " +
-                "POST /kkm/${preparedKkm.kkmId}/users",
+                    "POST /kkm/${preparedKkm.kkmId}/users",
         ) {
             superkassa.request(preparedKkm.adminPin)
                 .body(request.asBody())
@@ -107,7 +115,7 @@ class KkmUserUpdateSmokeTest : BaseTest() {
             ?: findCreatedUserId(preparedKkm, request.name)
             ?: error(
                 "Не удалось подготовить тестовые данные: созданный пользователь '${request.name}' " +
-                    "не найден в ККМ '${preparedKkm.kkmId}'.",
+                        "не найден в ККМ '${preparedKkm.kkmId}'.",
             )
 
         return CreatedUser(preparedKkm, userId)
@@ -116,7 +124,7 @@ class KkmUserUpdateSmokeTest : BaseTest() {
     private fun updateUser(createdUser: CreatedUser): Response =
         reportStep(
             "Редактируем пользователя userId='${createdUser.userId}' через " +
-                "PUT /kkm/${createdUser.preparedKkm.kkmId}/users/${createdUser.userId}",
+                    "PUT /kkm/${createdUser.preparedKkm.kkmId}/users/${createdUser.userId}",
         ) {
             superkassa.request(createdUser.preparedKkm.adminPin)
                 .body(mapOf("name" to "Updated smoke кассир ${UUID.randomUUID().toString().take(8)}"))

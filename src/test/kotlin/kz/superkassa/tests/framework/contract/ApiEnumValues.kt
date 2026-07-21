@@ -4,7 +4,6 @@ object ApiEnumValues {
     val INFO_MODES = setOf("DESKTOP", "SERVER")
     val STORAGE_ENGINES = setOf("SQLITE", "POSTGRESQL", "MYSQL")
     val DELIVERY_CHANNELS = setOf("PRINT", "EMAIL", "SMS", "TELEGRAM", "WHATSAPP")
-
     val KKM_MODES = setOf("REGISTRATION", "PROGRAMMING")
     val KKM_STATES = setOf("IDLE", "ACTIVE", "PROGRAMMING", "BLOCKED")
     val BRANDING_LANGUAGES = setOf("RU", "KK", "MIXED")
@@ -13,7 +12,7 @@ object ApiEnumValues {
     val VAT_GROUPS = setOf("NO_VAT", "VAT_0", "VAT_12", "VAT_16")
     val OFD_ENVIRONMENTS = setOf("DEV", "TEST", "PROD")
     val OFD_IDS = setOf("KAZAKHTELECOM")
+    val OFD_COMMAND_STATUSES = setOf("OK", "FAILED", "TIMEOUT")
     val USER_ROLES = setOf("ADMIN", "CASHIER")
-
     val HEALTH_OFD_STATUS_PREFIXES = setOf("OK", "DEGRADED", "SKIPPED", "ERROR")
 }

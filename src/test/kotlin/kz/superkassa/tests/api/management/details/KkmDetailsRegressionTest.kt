@@ -15,7 +15,9 @@ import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -26,236 +28,423 @@ import java.util.UUID
 @Story("GET /kkm/{kkmId}")
 @Owner("Pavel Michka")
 @DisplayName("GET /kkm/{kkmId}: регрессионные проверки получения информации о ККМ")
+@Suppress("NonAsciiCharacters")
 class KkmDetailsRegressionTest : BaseTest() {
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /kkm/{kkmId} возвращает поля ожидаемых типов")
-    fun shouldReturnExpectedFieldTypes() {
-        val response = getKkmDetails()
+    @Nested
+    @ApiRegression
+    @Feature("API")
+    @Story("GET /kkm/{kkmId}")
+    @Owner("Pavel Michka")
+    @DisplayName("Позитивные проверки GET /kkm/{kkmId}")
+    inner class PositiveRegressionTests {
+        private lateinit var kkmId: String
 
-        SoftAssertions().apply {
-            assertFieldType(this, response, "autoCloseShift", "autoCloseShift", Boolean::class.javaObjectType, KKM_RESPONSE_SCHEMA)
-            assertFieldType(this, response, "createdAt", "createdAt", Long::class.javaObjectType, KKM_RESPONSE_SCHEMA)
-            assertFieldType(this, response, "kkmId", "kkmId", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertFieldType(this, response, "mode", "mode", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertFieldType(this, response, "state", "state", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertFieldType(this, response, "updatedAt", "updatedAt", Long::class.javaObjectType, KKM_RESPONSE_SCHEMA)
+        @BeforeEach
+        fun `Получаем контрольную ККМ`() {
+            kkmId = firstKkmIdOrSkip()
+        }
 
-            assertOptionalFieldType(
-                this,
-                response,
-                "autonomousSince",
-                "autonomousSince",
-                Long::class.javaObjectType,
-                KKM_RESPONSE_SCHEMA,
-            )
-            assertOptionalFieldType(this, response, "branding", "branding", Map::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "defaultVatGroup", "defaultVatGroup", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "factoryNumber", "factoryNumber", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "kkmKgdId", "kkmKgdId", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(
-                this,
-                response,
-                "lastFiscalHashBase64",
-                "lastFiscalHashBase64",
-                String::class.java,
-                KKM_RESPONSE_SCHEMA,
-            )
-            assertOptionalFieldType(this, response, "lastReceiptNo", "lastReceiptNo", Int::class.javaObjectType, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "lastShiftNo", "lastShiftNo", Int::class.javaObjectType, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "lastZReportNo", "lastZReportNo", Int::class.javaObjectType, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(
-                this,
-                response,
-                "manufactureYear",
-                "manufactureYear",
-                Int::class.javaObjectType,
-                KKM_RESPONSE_SCHEMA,
-            )
-            assertOptionalFieldType(this, response, "ofdEnvironment", "ofdEnvironment", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "ofdId", "ofdId", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "ofdServiceInfo", "ofdServiceInfo", Map::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "ofdSystemId", "ofdSystemId", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(this, response, "taxRegime", "taxRegime", String::class.java, KKM_RESPONSE_SCHEMA)
-            assertOptionalFieldType(
-                this,
-                response,
-                "tokenUpdatedAt",
-                "tokenUpdatedAt",
-                Long::class.javaObjectType,
-                KKM_RESPONSE_SCHEMA,
-            )
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /kkm/{kkmId} возвращает поля ожидаемых типов")
+        fun shouldReturnExpectedFieldTypes() {
+            val response = getKkmDetails(kkmId)
 
-            response.objectField("ofdServiceInfo")?.let { ofdServiceInfo ->
+            SoftAssertions().apply {
                 assertFieldType(
                     this,
-                    ofdServiceInfo,
-                    "geoLatitude",
-                    "ofdServiceInfo.geoLatitude",
-                    Int::class.javaObjectType,
-                    OFD_SERVICE_INFO_SCHEMA,
+                    response,
+                    "autoCloseShift",
+                    "autoCloseShift",
+                    Boolean::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA
                 )
                 assertFieldType(
                     this,
-                    ofdServiceInfo,
-                    "geoLongitude",
-                    "ofdServiceInfo.geoLongitude",
-                    Int::class.javaObjectType,
-                    OFD_SERVICE_INFO_SCHEMA,
+                    response,
+                    "createdAt",
+                    "createdAt",
+                    Long::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA
                 )
-                assertFieldType(this, ofdServiceInfo, "geoSource", "ofdServiceInfo.geoSource", String::class.java, OFD_SERVICE_INFO_SCHEMA)
-                assertFieldType(this, ofdServiceInfo, "orgAddress", "ofdServiceInfo.orgAddress", String::class.java, OFD_SERVICE_INFO_SCHEMA)
+                assertFieldType(this, response, "kkmId", "kkmId", String::class.java, KKM_RESPONSE_SCHEMA)
+                assertFieldType(this, response, "mode", "mode", String::class.java, KKM_RESPONSE_SCHEMA)
+                assertFieldType(this, response, "state", "state", String::class.java, KKM_RESPONSE_SCHEMA)
                 assertFieldType(
                     this,
-                    ofdServiceInfo,
-                    "orgAddressKz",
-                    "ofdServiceInfo.orgAddressKz",
+                    response,
+                    "updatedAt",
+                    "updatedAt",
+                    Long::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA
+                )
+
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "autonomousSince",
+                    "autonomousSince",
+                    Long::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA,
+                )
+                assertOptionalFieldType(this, response, "branding", "branding", Map::class.java, KKM_RESPONSE_SCHEMA)
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "defaultVatGroup",
+                    "defaultVatGroup",
                     String::class.java,
-                    OFD_SERVICE_INFO_SCHEMA,
+                    KKM_RESPONSE_SCHEMA
                 )
-                assertFieldType(this, ofdServiceInfo, "orgInn", "ofdServiceInfo.orgInn", String::class.java, OFD_SERVICE_INFO_SCHEMA)
-                assertFieldType(this, ofdServiceInfo, "orgOkved", "ofdServiceInfo.orgOkved", String::class.java, OFD_SERVICE_INFO_SCHEMA)
-                assertFieldType(this, ofdServiceInfo, "orgTitle", "ofdServiceInfo.orgTitle", String::class.java, OFD_SERVICE_INFO_SCHEMA)
-            }
-
-            response.objectField("branding")?.let { branding ->
-                assertFieldType(this, branding, "language", "branding.language", String::class.java, BRANDING_RESPONSE_SCHEMA)
-                assertFieldType(this, branding, "ofdTicketAds", "branding.ofdTicketAds", List::class.java, BRANDING_RESPONSE_SCHEMA)
-                assertOfdTicketAdsItemsType(this, branding["ofdTicketAds"])
-                assertFieldType(
+                assertOptionalFieldType(
                     this,
-                    branding,
-                    "paperWidthMm",
-                    "branding.paperWidthMm",
+                    response,
+                    "factoryNumber",
+                    "factoryNumber",
+                    String::class.java,
+                    KKM_RESPONSE_SCHEMA
+                )
+                assertOptionalFieldType(this, response, "kkmKgdId", "kkmKgdId", String::class.java, KKM_RESPONSE_SCHEMA)
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "lastFiscalHashBase64",
+                    "lastFiscalHashBase64",
+                    String::class.java,
+                    KKM_RESPONSE_SCHEMA,
+                )
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "lastReceiptNo",
+                    "lastReceiptNo",
                     Int::class.javaObjectType,
-                    BRANDING_RESPONSE_SCHEMA,
+                    KKM_RESPONSE_SCHEMA
                 )
-                assertFieldType(
+                assertOptionalFieldType(
                     this,
-                    branding,
-                    "printOfdTicketAds",
-                    "branding.printOfdTicketAds",
-                    Boolean::class.javaObjectType,
-                    BRANDING_RESPONSE_SCHEMA,
+                    response,
+                    "lastShiftNo",
+                    "lastShiftNo",
+                    Int::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA
                 )
-                assertFieldType(this, branding, "themeColor", "branding.themeColor", String::class.java, BRANDING_RESPONSE_SCHEMA)
-                assertFieldType(
+                assertOptionalFieldType(
                     this,
-                    branding,
-                    "useForceDarkTheme",
-                    "branding.useForceDarkTheme",
-                    Boolean::class.javaObjectType,
-                    BRANDING_RESPONSE_SCHEMA,
+                    response,
+                    "lastZReportNo",
+                    "lastZReportNo",
+                    Int::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA
+                )
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "manufactureYear",
+                    "manufactureYear",
+                    Int::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA,
+                )
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "ofdEnvironment",
+                    "ofdEnvironment",
+                    String::class.java,
+                    KKM_RESPONSE_SCHEMA
+                )
+                assertOptionalFieldType(this, response, "ofdId", "ofdId", String::class.java, KKM_RESPONSE_SCHEMA)
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "ofdServiceInfo",
+                    "ofdServiceInfo",
+                    Map::class.java,
+                    KKM_RESPONSE_SCHEMA
+                )
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "ofdSystemId",
+                    "ofdSystemId",
+                    String::class.java,
+                    KKM_RESPONSE_SCHEMA
+                )
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "taxRegime",
+                    "taxRegime",
+                    String::class.java,
+                    KKM_RESPONSE_SCHEMA
+                )
+                assertOptionalFieldType(
+                    this,
+                    response,
+                    "tokenUpdatedAt",
+                    "tokenUpdatedAt",
+                    Long::class.javaObjectType,
+                    KKM_RESPONSE_SCHEMA,
                 )
 
-                BRANDING_OPTIONAL_STRING_FIELDS.forEach { fieldName ->
-                    assertOptionalFieldType(
+                response.objectField("ofdServiceInfo")?.let { ofdServiceInfo ->
+                    assertFieldType(
                         this,
-                        branding,
-                        fieldName,
-                        "branding.$fieldName",
+                        ofdServiceInfo,
+                        "geoLatitude",
+                        "ofdServiceInfo.geoLatitude",
+                        Int::class.javaObjectType,
+                        OFD_SERVICE_INFO_SCHEMA,
+                    )
+                    assertFieldType(
+                        this,
+                        ofdServiceInfo,
+                        "geoLongitude",
+                        "ofdServiceInfo.geoLongitude",
+                        Int::class.javaObjectType,
+                        OFD_SERVICE_INFO_SCHEMA,
+                    )
+                    assertFieldType(
+                        this,
+                        ofdServiceInfo,
+                        "geoSource",
+                        "ofdServiceInfo.geoSource",
                         String::class.java,
-                        BRANDING_RESPONSE_SCHEMA,
+                        OFD_SERVICE_INFO_SCHEMA
+                    )
+                    assertFieldType(
+                        this,
+                        ofdServiceInfo,
+                        "orgAddress",
+                        "ofdServiceInfo.orgAddress",
+                        String::class.java,
+                        OFD_SERVICE_INFO_SCHEMA
+                    )
+                    assertFieldType(
+                        this,
+                        ofdServiceInfo,
+                        "orgAddressKz",
+                        "ofdServiceInfo.orgAddressKz",
+                        String::class.java,
+                        OFD_SERVICE_INFO_SCHEMA,
+                    )
+                    assertFieldType(
+                        this,
+                        ofdServiceInfo,
+                        "orgInn",
+                        "ofdServiceInfo.orgInn",
+                        String::class.java,
+                        OFD_SERVICE_INFO_SCHEMA
+                    )
+                    assertFieldType(
+                        this,
+                        ofdServiceInfo,
+                        "orgOkved",
+                        "ofdServiceInfo.orgOkved",
+                        String::class.java,
+                        OFD_SERVICE_INFO_SCHEMA
+                    )
+                    assertFieldType(
+                        this,
+                        ofdServiceInfo,
+                        "orgTitle",
+                        "ofdServiceInfo.orgTitle",
+                        String::class.java,
+                        OFD_SERVICE_INFO_SCHEMA
                     )
                 }
-            }
-        }.assertAll()
+
+                response.objectField("branding")?.let { branding ->
+                    assertFieldType(
+                        this,
+                        branding,
+                        "language",
+                        "branding.language",
+                        String::class.java,
+                        BRANDING_RESPONSE_SCHEMA
+                    )
+                    assertFieldType(
+                        this,
+                        branding,
+                        "ofdTicketAds",
+                        "branding.ofdTicketAds",
+                        List::class.java,
+                        BRANDING_RESPONSE_SCHEMA
+                    )
+                    assertOfdTicketAdsItemsType(this, branding["ofdTicketAds"])
+                    assertFieldType(
+                        this,
+                        branding,
+                        "paperWidthMm",
+                        "branding.paperWidthMm",
+                        Int::class.javaObjectType,
+                        BRANDING_RESPONSE_SCHEMA,
+                    )
+                    assertFieldType(
+                        this,
+                        branding,
+                        "printOfdTicketAds",
+                        "branding.printOfdTicketAds",
+                        Boolean::class.javaObjectType,
+                        BRANDING_RESPONSE_SCHEMA,
+                    )
+                    assertFieldType(
+                        this,
+                        branding,
+                        "themeColor",
+                        "branding.themeColor",
+                        String::class.java,
+                        BRANDING_RESPONSE_SCHEMA
+                    )
+                    assertFieldType(
+                        this,
+                        branding,
+                        "useForceDarkTheme",
+                        "branding.useForceDarkTheme",
+                        Boolean::class.javaObjectType,
+                        BRANDING_RESPONSE_SCHEMA,
+                    )
+
+                    BRANDING_OPTIONAL_STRING_FIELDS.forEach { fieldName ->
+                        assertOptionalFieldType(
+                            this,
+                            branding,
+                            fieldName,
+                            "branding.$fieldName",
+                            String::class.java,
+                            BRANDING_RESPONSE_SCHEMA,
+                        )
+                    }
+                }
+            }.assertAll()
+        }
+
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /kkm/{kkmId} не возвращает поля вне Swagger-контракта")
+        fun shouldNotReturnFieldsOutsideSwaggerContract() {
+            val response = getKkmDetails(kkmId)
+
+            SoftAssertions().apply {
+                assertOnlySwaggerFields(this, response, KKM_RESPONSE_SCHEMA, KKM_RESPONSE_FIELDS)
+
+                response.objectField("ofdServiceInfo")?.let { ofdServiceInfo ->
+                    assertOnlySwaggerFields(
+                        this,
+                        ofdServiceInfo,
+                        OFD_SERVICE_INFO_SCHEMA,
+                        OFD_SERVICE_INFO_RESPONSE_FIELDS,
+                    )
+                }
+
+                response.objectField("branding")?.let { branding ->
+                    assertOnlySwaggerFields(this, branding, BRANDING_RESPONSE_SCHEMA, BRANDING_RESPONSE_FIELDS)
+                }
+            }.assertAll()
+        }
+
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /kkm/{kkmId} возвращает допустимые enum-значения")
+        fun shouldReturnSupportedEnumValues() {
+            val response = getKkmDetails(kkmId)
+
+            SoftAssertions().apply {
+                assertRequiredEnumValue(this, response, "mode", "mode", KKM_RESPONSE_SCHEMA, ApiEnumValues.KKM_MODES)
+                assertRequiredEnumValue(this, response, "state", "state", KKM_RESPONSE_SCHEMA, ApiEnumValues.KKM_STATES)
+                assertOptionalEnumValue(this, response, "defaultVatGroup", "defaultVatGroup", ApiEnumValues.VAT_GROUPS)
+                assertOptionalEnumValue(
+                    this,
+                    response,
+                    "ofdEnvironment",
+                    "ofdEnvironment",
+                    ApiEnumValues.OFD_ENVIRONMENTS
+                )
+                assertOptionalEnumValue(this, response, "ofdId", "ofdId", ApiEnumValues.OFD_IDS)
+                assertOptionalEnumValue(this, response, "taxRegime", "taxRegime", ApiEnumValues.TAX_REGIMES)
+
+                response.objectField("branding")?.let { branding ->
+                    assertRequiredEnumValue(
+                        this,
+                        branding,
+                        "language",
+                        "branding.language",
+                        BRANDING_RESPONSE_SCHEMA,
+                        ApiEnumValues.BRANDING_LANGUAGES,
+                    )
+                    assertRequiredEnumValue(
+                        this,
+                        branding,
+                        "themeColor",
+                        "branding.themeColor",
+                        BRANDING_RESPONSE_SCHEMA,
+                        ApiEnumValues.BRANDING_THEME_COLORS,
+                    )
+                }
+            }.assertAll()
+        }
+
     }
 
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /kkm/{kkmId} не возвращает поля вне Swagger-контракта")
-    fun shouldNotReturnFieldsOutsideSwaggerContract() {
-        val response = getKkmDetails()
+    @Nested
+    @ApiRegression
+    @Feature("API")
+    @Story("GET /kkm/{kkmId}")
+    @Owner("Pavel Michka")
+    @DisplayName("Негативные проверки GET /kkm/{kkmId}")
+    inner class NegativeRegressionTests {
+        @Nested
+        @ApiRegression
+        @Feature("API")
+        @Story("GET /kkm/{kkmId}")
+        @Owner("Pavel Michka")
+        @DisplayName("Проверки несуществующих идентификаторов")
+        inner class MissingIdentifiersTests {
+            @Test
+            @Severity(SeverityLevel.NORMAL)
+            @DisplayName("Метод GET /kkm/{kkmId} возвращает 404 для несуществующей ККМ")
+            fun shouldReturnNotFoundForUnknownKkmId() {
+                val unknownKkmId = UUID.randomUUID().toString()
 
-        SoftAssertions().apply {
-            assertOnlySwaggerFields(this, response, KKM_RESPONSE_SCHEMA, KKM_RESPONSE_FIELDS)
-
-            response.objectField("ofdServiceInfo")?.let { ofdServiceInfo ->
-                assertOnlySwaggerFields(
-                    this,
-                    ofdServiceInfo,
-                    OFD_SERVICE_INFO_SCHEMA,
-                    OFD_SERVICE_INFO_RESPONSE_FIELDS,
-                )
+                reportStep("Проверяем GET /kkm/$unknownKkmId для несуществующей ККМ без авторизации") {
+                    superkassa.requestWithoutAuthorization()
+                        .`when`()
+                        .get("/kkm/{kkmId}", unknownKkmId)
+                        .then()
+                        .shouldHaveStatus(404, "несуществующая ККМ")
+                        .contentType(ContentType.JSON)
+                }
             }
 
-            response.objectField("branding")?.let { branding ->
-                assertOnlySwaggerFields(this, branding, BRANDING_RESPONSE_SCHEMA, BRANDING_RESPONSE_FIELDS)
+        }
+
+        @Nested
+        @ApiRegression
+        @Feature("API")
+        @Story("GET /kkm/{kkmId}")
+        @Owner("Pavel Michka")
+        @DisplayName("Проверки неподдерживаемых HTTP-методов")
+        inner class UnsupportedHttpMethodsTests {
+            @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}' возвращает 405")
+            @EnumSource(value = Method::class, names = ["POST", "PUT", "PATCH"])
+            @Severity(SeverityLevel.NORMAL)
+            @DisplayName("Метод /kkm/{kkmId} возвращает 405 для HTTP-методов кроме GET и DELETE")
+            fun shouldReturnMethodNotAllowedForUnsupportedMethods(method: Method) {
+                val kkmId = UUID.randomUUID().toString()
+
+                reportStep("Проверяем, что HTTP $method /kkm/$kkmId не поддерживается") {
+                    superkassa.requestWithoutAuthorization()
+                        .`when`()
+                        .request(method, "/kkm/{kkmId}", kkmId)
+                        .then()
+                        .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+                }
             }
-        }.assertAll()
-    }
 
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /kkm/{kkmId} возвращает допустимые enum-значения")
-    fun shouldReturnSupportedEnumValues() {
-        val response = getKkmDetails()
-
-        SoftAssertions().apply {
-            assertRequiredEnumValue(this, response, "mode", "mode", KKM_RESPONSE_SCHEMA, ApiEnumValues.KKM_MODES)
-            assertRequiredEnumValue(this, response, "state", "state", KKM_RESPONSE_SCHEMA, ApiEnumValues.KKM_STATES)
-            assertOptionalEnumValue(this, response, "defaultVatGroup", "defaultVatGroup", ApiEnumValues.VAT_GROUPS)
-            assertOptionalEnumValue(this, response, "ofdEnvironment", "ofdEnvironment", ApiEnumValues.OFD_ENVIRONMENTS)
-            assertOptionalEnumValue(this, response, "ofdId", "ofdId", ApiEnumValues.OFD_IDS)
-            assertOptionalEnumValue(this, response, "taxRegime", "taxRegime", ApiEnumValues.TAX_REGIMES)
-
-            response.objectField("branding")?.let { branding ->
-                assertRequiredEnumValue(
-                    this,
-                    branding,
-                    "language",
-                    "branding.language",
-                    BRANDING_RESPONSE_SCHEMA,
-                    ApiEnumValues.BRANDING_LANGUAGES,
-                )
-                assertRequiredEnumValue(
-                    this,
-                    branding,
-                    "themeColor",
-                    "branding.themeColor",
-                    BRANDING_RESPONSE_SCHEMA,
-                    ApiEnumValues.BRANDING_THEME_COLORS,
-                )
-            }
-        }.assertAll()
-    }
-
-    @Test
-    @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод GET /kkm/{kkmId} возвращает 404 для несуществующей ККМ")
-    fun shouldReturnNotFoundForUnknownKkmId() {
-        val unknownKkmId = UUID.randomUUID().toString()
-
-        reportStep("Проверяем GET /kkm/$unknownKkmId для несуществующей ККМ без авторизации") {
-            superkassa.requestWithoutAuthorization()
-                .`when`()
-                .get("/kkm/{kkmId}", unknownKkmId)
-                .then()
-                .shouldHaveStatus(404, "несуществующая ККМ")
-                .contentType(ContentType.JSON)
         }
     }
 
-    @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}' возвращает 405")
-    @EnumSource(value = Method::class, names = ["POST", "PUT", "PATCH"])
-    @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод /kkm/{kkmId} возвращает 405 для HTTP-методов кроме GET и DELETE")
-    fun shouldReturnMethodNotAllowedForUnsupportedMethods(method: Method) {
-        val kkmId = UUID.randomUUID().toString()
-
-        reportStep("Проверяем, что HTTP $method /kkm/$kkmId не поддерживается") {
-            superkassa.requestWithoutAuthorization()
-                .`when`()
-                .request(method, "/kkm/{kkmId}", kkmId)
-                .then()
-                .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
-        }
-    }
-
-    private fun getKkmDetails(): Map<String, Any?> {
-        val kkmId = firstKkmIdOrSkip()
-
+    private fun getKkmDetails(kkmId: String): Map<String, Any?> {
         return reportStep("Получаем информацию о ККМ kkmId='$kkmId' через GET /kkm/$kkmId без авторизации") {
             superkassa.requestWithoutAuthorization()
                 .`when`()
@@ -312,7 +501,14 @@ class KkmDetailsRegressionTest : BaseTest() {
             .containsKey(fieldName)
 
         softly.assertThat(item[fieldName])
-            .withFailMessage(ApiContractErrorMessages.fieldTypeMismatch(ENDPOINT, fieldPath, expectedType.simpleName, schemaName))
+            .withFailMessage(
+                ApiContractErrorMessages.fieldTypeMismatch(
+                    ENDPOINT,
+                    fieldPath,
+                    expectedType.simpleName,
+                    schemaName
+                )
+            )
             .isInstanceOf(expectedType)
     }
 
@@ -327,7 +523,14 @@ class KkmDetailsRegressionTest : BaseTest() {
         val fieldValue = item[fieldName] ?: return
 
         softly.assertThat(fieldValue)
-            .withFailMessage(ApiContractErrorMessages.optionalFieldTypeMismatch(ENDPOINT, fieldPath, expectedType.simpleName, schemaName))
+            .withFailMessage(
+                ApiContractErrorMessages.optionalFieldTypeMismatch(
+                    ENDPOINT,
+                    fieldPath,
+                    expectedType.simpleName,
+                    schemaName
+                )
+            )
             .isInstanceOf(expectedType)
     }
 

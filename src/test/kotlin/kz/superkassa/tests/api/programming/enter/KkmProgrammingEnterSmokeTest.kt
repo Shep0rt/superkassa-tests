@@ -9,7 +9,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.kkm.KkmAuthenticatedTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.tags.ApiSmoke
@@ -24,12 +24,16 @@ import org.junit.jupiter.api.Test
 @Owner("Pavel Michka")
 @DisplayName("POST /kkm/{kkmId}/programming/enter: smoke-проверки входа в режим программирования")
 @Suppress("SameParameterValue", "NonAsciiCharacters")
-class KkmProgrammingEnterSmokeTest : BaseTest() {
+class KkmProgrammingEnterSmokeTest : KkmAuthenticatedTest() {
     private var kkmToExitAfterTest: PreparedKkmAuth? = null
 
     @AfterEach
-    fun `Возвращаем ККМ из режима программирования после проверки`() {
-        val preparedKkm = kkmToExitAfterTest ?: return
+    fun `Восстанавливаем режим ККМ после проверки`() {
+        val preparedKkm = kkmToExitAfterTest
+        if (preparedKkm == null) {
+            Allure.step("Возврат не требуется: ККМ не оставлена в режиме программирования")
+            return
+        }
         kkmToExitAfterTest = null
         exitProgramming(preparedKkm)
     }
@@ -38,7 +42,6 @@ class KkmProgrammingEnterSmokeTest : BaseTest() {
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает HTTP 200 и JSON")
     fun shouldEnterProgrammingSuccessfully() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
 
         withProgrammingMode(preparedKkm) {}
     }
@@ -47,11 +50,16 @@ class KkmProgrammingEnterSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает обязательные поля ККМ")
     fun shouldReturnRequiredKkmFieldsAfterEnterProgramming() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
 
         withProgrammingMode(preparedKkm) { json ->
             SoftAssertions().apply {
-                assertRequiredFieldPresent(this, value(json, "autoCloseShift"), ENDPOINT, "autoCloseShift", "KkmResponse")
+                assertRequiredFieldPresent(
+                    this,
+                    value(json, "autoCloseShift"),
+                    ENDPOINT,
+                    "autoCloseShift",
+                    "KkmResponse"
+                )
                 assertRequiredFieldPresent(this, value(json, "createdAt"), ENDPOINT, "createdAt", "KkmResponse")
                 assertRequiredFieldPresent(this, value(json, "kkmId"), ENDPOINT, "kkmId", "KkmResponse")
                 assertRequiredFieldPresent(this, value(json, "mode"), ENDPOINT, "mode", "KkmResponse")
@@ -65,11 +73,16 @@ class KkmProgrammingEnterSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/enter возвращает заполненные обязательные поля ККМ")
     fun shouldReturnFilledRequiredKkmFieldsAfterEnterProgramming() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
 
         withProgrammingMode(preparedKkm) { json ->
             SoftAssertions().apply {
-                assertRequiredFieldFilled(this, value(json, "autoCloseShift"), ENDPOINT, "autoCloseShift", "KkmResponse")
+                assertRequiredFieldFilled(
+                    this,
+                    value(json, "autoCloseShift"),
+                    ENDPOINT,
+                    "autoCloseShift",
+                    "KkmResponse"
+                )
                 assertRequiredFieldFilled(this, value(json, "createdAt"), ENDPOINT, "createdAt", "KkmResponse")
                 assertRequiredFieldFilled(this, value(json, "kkmId"), ENDPOINT, "kkmId", "KkmResponse")
                 assertRequiredFieldFilled(this, value(json, "mode"), ENDPOINT, "mode", "KkmResponse")
@@ -83,14 +96,13 @@ class KkmProgrammingEnterSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/enter переводит выбранную ККМ в режим программирования")
     fun shouldReturnSameKkmInProgrammingMode() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
 
         withProgrammingMode(preparedKkm) { json ->
             SoftAssertions().apply {
                 assertThat(value(json, "kkmId") as? String)
                     .withFailMessage(
                         "Функциональность API нарушена: POST /kkm/%s/programming/enter вернул данные другой ККМ. " +
-                            "Ожидался kkmId='%s'.",
+                                "Ожидался kkmId='%s'.",
                         preparedKkm.kkmId,
                         preparedKkm.kkmId,
                     )
@@ -123,7 +135,8 @@ class KkmProgrammingEnterSmokeTest : BaseTest() {
                 .response()
         }
 
-        val response: Response = Allure.step("Переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования", enterProgramming)
+        val response: Response =
+            Allure.step("Переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования", enterProgramming)
 
         return response.jsonPath()
     }

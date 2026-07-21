@@ -13,6 +13,7 @@ import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -23,49 +24,75 @@ import org.junit.jupiter.params.provider.EnumSource
 @Owner("Pavel Michka")
 @DisplayName("GET /kkm/factory-info: регрессионные проверки генерации заводской информации ККМ")
 class KkmFactoryInfoRegressionTest : BaseTest() {
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /kkm/factory-info возвращает поля ожидаемых типов")
-    fun shouldReturnExpectedFieldTypes() {
-        val response = getFactoryInfo()
+    @Nested
+    @ApiRegression
+    @Feature("API")
+    @Story("GET /kkm/factory-info")
+    @Owner("Pavel Michka")
+    @DisplayName("Позитивные проверки GET /kkm/factory-info")
+    inner class PositiveRegressionTests {
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /kkm/factory-info возвращает поля ожидаемых типов")
+        fun shouldReturnExpectedFieldTypes() {
+            val response = getFactoryInfo()
 
-        SoftAssertions().apply {
-            assertFieldType(this, response, "factoryNumber", String::class.java)
-            assertFieldType(this, response, "manufactureYear", Int::class.javaObjectType)
-        }.assertAll()
+            SoftAssertions().apply {
+                assertFieldType(this, response, "factoryNumber", String::class.java)
+                assertFieldType(this, response, "manufactureYear", Int::class.javaObjectType)
+            }.assertAll()
+        }
+
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /kkm/factory-info не возвращает поля вне Swagger-контракта")
+        fun shouldNotReturnFieldsOutsideSwaggerContract() {
+            val response = getFactoryInfo()
+            val unexpectedFields = response.keys - RESPONSE_FIELDS
+
+            SoftAssertions().apply {
+                assertThat(unexpectedFields)
+                    .withFailMessage(
+                        ApiContractErrorMessages.unexpectedSwaggerFields(
+                            ENDPOINT,
+                            RESPONSE_SCHEMA,
+                            unexpectedFields,
+                        ),
+                    )
+                    .isEmpty()
+            }.assertAll()
+        }
+
     }
 
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /kkm/factory-info не возвращает поля вне Swagger-контракта")
-    fun shouldNotReturnFieldsOutsideSwaggerContract() {
-        val response = getFactoryInfo()
-        val unexpectedFields = response.keys - RESPONSE_FIELDS
+    @Nested
+    @ApiRegression
+    @Feature("API")
+    @Story("GET /kkm/factory-info")
+    @Owner("Pavel Michka")
+    @DisplayName("Негативные проверки GET /kkm/factory-info")
+    inner class NegativeRegressionTests {
+        @Nested
+        @ApiRegression
+        @Feature("API")
+        @Story("GET /kkm/factory-info")
+        @Owner("Pavel Michka")
+        @DisplayName("Проверки неподдерживаемых HTTP-методов")
+        inner class UnsupportedHttpMethodsTests {
+            @ParameterizedTest(name = "HTTP {0} /kkm/factory-info возвращает 405")
+            @EnumSource(value = Method::class, names = ["POST", "PUT", "PATCH", "DELETE"])
+            @Severity(SeverityLevel.NORMAL)
+            @DisplayName("Метод /kkm/factory-info возвращает 405 для HTTP-методов кроме GET")
+            fun shouldReturnMethodNotAllowedForUnsupportedMethods(method: Method) {
+                reportStep("Проверяем, что HTTP $method /kkm/factory-info не поддерживается") {
+                    superkassa.requestWithoutAuthorization()
+                        .`when`()
+                        .request(method, "/kkm/factory-info")
+                        .then()
+                        .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+                }
+            }
 
-        SoftAssertions().apply {
-            assertThat(unexpectedFields)
-                .withFailMessage(
-                    ApiContractErrorMessages.unexpectedSwaggerFields(
-                        ENDPOINT,
-                        RESPONSE_SCHEMA,
-                        unexpectedFields,
-                    ),
-                )
-                .isEmpty()
-        }.assertAll()
-    }
-
-    @ParameterizedTest(name = "HTTP {0} /kkm/factory-info возвращает 405")
-    @EnumSource(value = Method::class, names = ["POST", "PUT", "PATCH", "DELETE"])
-    @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод /kkm/factory-info возвращает 405 для HTTP-методов кроме GET")
-    fun shouldReturnMethodNotAllowedForUnsupportedMethods(method: Method) {
-        reportStep("Проверяем, что HTTP $method /kkm/factory-info не поддерживается") {
-            superkassa.requestWithoutAuthorization()
-                .`when`()
-                .request(method, "/kkm/factory-info")
-                .then()
-                .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
         }
     }
 

@@ -7,12 +7,13 @@ import io.qameta.allure.SeverityLevel
 import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.kkm.KkmAuthenticatedTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.ResourceAccessMode
@@ -26,14 +27,19 @@ import java.util.concurrent.ThreadLocalRandom
 @Owner("Pavel Michka")
 @DisplayName("DELETE /kkm/{kkmId}/users/{userId}: smoke-проверки удаления пользователя ККМ")
 @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
-@Suppress("SameParameterValue")
-class KkmUserDeleteSmokeTest : BaseTest() {
+@Suppress("SameParameterValue", "NonAsciiCharacters")
+class KkmUserDeleteSmokeTest : KkmAuthenticatedTest() {
+    private lateinit var createdUser: CreatedUser
+
+    @BeforeEach
+    fun `Создаем пользователя для удаления`() {
+        createdUser = prepareUserForDeletion()
+    }
+
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод DELETE /kkm/{kkmId}/users/{userId} удаляет пользователя и возвращает HTTP 200 и JSON")
     fun shouldDeleteUserSuccessfully() {
-        val createdUser = prepareUserForDeletion()
-
         deleteUser(createdUser)
     }
 
@@ -41,8 +47,6 @@ class KkmUserDeleteSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод DELETE /kkm/{kkmId}/users/{userId} возвращает обязательное поле ok")
     fun shouldReturnRequiredOkField() {
-        val createdUser = prepareUserForDeletion()
-
         val response = deleteUser(createdUser)
 
         assertThat(response)
@@ -54,8 +58,6 @@ class KkmUserDeleteSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод DELETE /kkm/{kkmId}/users/{userId} возвращает заполненное обязательное поле ok")
     fun shouldReturnFilledOkField() {
-        val createdUser = prepareUserForDeletion()
-
         val response = deleteUser(createdUser)
 
         assertThat(response["ok"])
@@ -64,7 +66,6 @@ class KkmUserDeleteSmokeTest : BaseTest() {
     }
 
     private fun prepareUserForDeletion(): CreatedUser {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
         val request = newUserRequest()
         val response: Response = reportStep(
             "Готовим предусловие: создаем пользователя role=${request.role} через POST /kkm/${preparedKkm.kkmId}/users",
@@ -85,7 +86,7 @@ class KkmUserDeleteSmokeTest : BaseTest() {
             ?: findCreatedUserId(preparedKkm, request.name)
             ?: error(
                 "Не удалось подготовить тестовые данные: созданный пользователь '${request.name}' " +
-                    "не найден в ККМ '${preparedKkm.kkmId}'.",
+                        "не найден в ККМ '${preparedKkm.kkmId}'.",
             )
 
         return CreatedUser(preparedKkm, userId)
@@ -94,7 +95,7 @@ class KkmUserDeleteSmokeTest : BaseTest() {
     private fun deleteUser(createdUser: CreatedUser): Map<String, Any?> =
         reportStep(
             "Удаляем пользователя userId='${createdUser.userId}' через " +
-                "DELETE /kkm/${createdUser.preparedKkm.kkmId}/users/${createdUser.userId}",
+                    "DELETE /kkm/${createdUser.preparedKkm.kkmId}/users/${createdUser.userId}",
         ) {
             val response = superkassa.request(createdUser.preparedKkm.adminPin)
                 .`when`()

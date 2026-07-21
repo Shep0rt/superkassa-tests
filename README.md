@@ -53,7 +53,7 @@ Allure 3 отчет из полученных результатов.
 ```bash
 ./gradlew --continue clean apiSmokeTest allureReport \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.auth-pin=local-token
+  -Dsuperkassa.auth-pin=0000
 ```
 
 Готовый отчет будет в:
@@ -73,7 +73,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiSmokeTest allureServe \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.auth-pin=local-token
+  -Dsuperkassa.auth-pin=0000
 ```
 
 `allureServe` поднимает локальный web-сервер и держит процесс Gradle активным,
@@ -84,7 +84,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiRegressionTest allureReport \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.auth-pin=local-token
+  -Dsuperkassa.auth-pin=0000
 ```
 
 Готовый отчет будет в:
@@ -104,7 +104,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiRegressionTest allureServe \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.auth-pin=local-token
+  -Dsuperkassa.auth-pin=0000
 ```
 
 `allureServe` поднимает локальный web-сервер только по результатам API regression-сьюта.
@@ -114,7 +114,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiSmokeTest apiRegressionTest allureReport \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.auth-pin=local-token
+  -Dsuperkassa.auth-pin=0000
 ```
 
 ### 6. API smoke and regression + web-сервер Allure
@@ -122,7 +122,7 @@ open build/reports/allure-report/allureReport/index.html
 ```bash
 ./gradlew --continue clean apiSmokeTest apiRegressionTest allureServe \
   -Dsuperkassa.base-url=http://localhost:8080 \
-  -Dsuperkassa.auth-pin=local-token
+  -Dsuperkassa.auth-pin=0000
 ```
 
 Для запуска без очистки достаточно убрать `clean`.
@@ -135,7 +135,12 @@ Runtime-конфигурация загружается из `application.conf` 
 Основные параметры:
 
 - `-Dsuperkassa.base-url=http://localhost:8080` или переменная окружения `SUPERKASSA_BASE_URL`.
-- `-Dsuperkassa.auth-pin=local-token` или переменная окружения `SUPERKASSA_AUTH_PIN`.
+- `-Dsuperkassa.auth-pin=0000` или переменная окружения `SUPERKASSA_AUTH_PIN`.
+
+При первом запуске передавайте текущий PIN администратора ККМ, для новой установки обычно `0000`.
+Тестовый framework найдет пользователя `role=ADMIN`, изменит его PIN на `0808` и будет использовать
+подготовленный PIN в остальных тестах. Если smoke-сьют уже выполнил подготовку, regression-сьют
+автоматически распознает действующий PIN `0808`, даже когда в общей команде по-прежнему передан `0000`.
 
 Секреты нельзя коммитить в репозиторий. Токены, пароли и доступы к стендам должны передаваться
 через переменные окружения локально или через secret-переменные CI/CD.

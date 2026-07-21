@@ -9,12 +9,13 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.kkm.KkmAuthenticatedTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
@@ -24,12 +25,21 @@ import org.junit.jupiter.api.Test
 @Owner("Pavel Michka")
 @DisplayName("POST /kkm/{kkmId}/programming/exit: smoke-проверки выхода из режима программирования")
 @Suppress("SameParameterValue", "NonAsciiCharacters")
-class KkmProgrammingExitSmokeTest : BaseTest() {
+class KkmProgrammingExitSmokeTest : KkmAuthenticatedTest() {
     private var kkmToExitAfterTest: PreparedKkmAuth? = null
 
+    @BeforeEach
+    fun `Переводим ККМ в режим программирования`() {
+        enterProgramming(preparedKkm)
+    }
+
     @AfterEach
-    fun `Возвращаем ККМ из режима программирования после проверки`() {
-        val preparedKkm = kkmToExitAfterTest ?: return
+    fun `Восстанавливаем режим ККМ после проверки`() {
+        val preparedKkm = kkmToExitAfterTest
+        if (preparedKkm == null) {
+            Allure.step("Возврат не требуется: ККМ не оставлена в режиме программирования")
+            return
+        }
         kkmToExitAfterTest = null
         exitProgrammingForCleanup(preparedKkm)
     }
@@ -38,10 +48,6 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/exit возвращает HTTP 200 и JSON")
     fun shouldExitProgrammingSuccessfully() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
-
-        enterProgramming(preparedKkm)
-
         exitProgrammingJson(preparedKkm)
     }
 
@@ -49,10 +55,6 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/exit возвращает обязательные поля ККМ")
     fun shouldReturnRequiredKkmFieldsAfterExitProgramming() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
-
-        enterProgramming(preparedKkm)
-
         val json = exitProgrammingJson(preparedKkm)
         val response = json.getMap<String, Any?>("")
 
@@ -65,23 +67,107 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
             assertRequiredFieldPresent(this, response["updatedAt"], ENDPOINT, "updatedAt", "KkmResponse")
 
             response.objectField("ofdServiceInfo")?.let { ofdServiceInfo ->
-                assertRequiredFieldPresent(this, ofdServiceInfo["geoLatitude"], ENDPOINT, "ofdServiceInfo.geoLatitude", "OfdServiceInfoResponse")
-                assertRequiredFieldPresent(this, ofdServiceInfo["geoLongitude"], ENDPOINT, "ofdServiceInfo.geoLongitude", "OfdServiceInfoResponse")
-                assertRequiredFieldPresent(this, ofdServiceInfo["geoSource"], ENDPOINT, "ofdServiceInfo.geoSource", "OfdServiceInfoResponse")
-                assertRequiredFieldPresent(this, ofdServiceInfo["orgAddress"], ENDPOINT, "ofdServiceInfo.orgAddress", "OfdServiceInfoResponse")
-                assertRequiredFieldPresent(this, ofdServiceInfo["orgAddressKz"], ENDPOINT, "ofdServiceInfo.orgAddressKz", "OfdServiceInfoResponse")
-                assertRequiredFieldPresent(this, ofdServiceInfo["orgInn"], ENDPOINT, "ofdServiceInfo.orgInn", "OfdServiceInfoResponse")
-                assertRequiredFieldPresent(this, ofdServiceInfo["orgOkved"], ENDPOINT, "ofdServiceInfo.orgOkved", "OfdServiceInfoResponse")
-                assertRequiredFieldPresent(this, ofdServiceInfo["orgTitle"], ENDPOINT, "ofdServiceInfo.orgTitle", "OfdServiceInfoResponse")
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["geoLatitude"],
+                    ENDPOINT,
+                    "ofdServiceInfo.geoLatitude",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["geoLongitude"],
+                    ENDPOINT,
+                    "ofdServiceInfo.geoLongitude",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["geoSource"],
+                    ENDPOINT,
+                    "ofdServiceInfo.geoSource",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["orgAddress"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgAddress",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["orgAddressKz"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgAddressKz",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["orgInn"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgInn",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["orgOkved"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgOkved",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    ofdServiceInfo["orgTitle"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgTitle",
+                    "OfdServiceInfoResponse"
+                )
             }
 
             response.objectField("branding")?.let { branding ->
-                assertRequiredFieldPresent(this, branding["language"], ENDPOINT, "branding.language", "ReceiptBrandingResponse")
-                assertRequiredFieldPresent(this, branding["ofdTicketAds"], ENDPOINT, "branding.ofdTicketAds", "ReceiptBrandingResponse")
-                assertRequiredFieldPresent(this, branding["paperWidthMm"], ENDPOINT, "branding.paperWidthMm", "ReceiptBrandingResponse")
-                assertRequiredFieldPresent(this, branding["printOfdTicketAds"], ENDPOINT, "branding.printOfdTicketAds", "ReceiptBrandingResponse")
-                assertRequiredFieldPresent(this, branding["themeColor"], ENDPOINT, "branding.themeColor", "ReceiptBrandingResponse")
-                assertRequiredFieldPresent(this, branding["useForceDarkTheme"], ENDPOINT, "branding.useForceDarkTheme", "ReceiptBrandingResponse")
+                assertRequiredFieldPresent(
+                    this,
+                    branding["language"],
+                    ENDPOINT,
+                    "branding.language",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    branding["ofdTicketAds"],
+                    ENDPOINT,
+                    "branding.ofdTicketAds",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    branding["paperWidthMm"],
+                    ENDPOINT,
+                    "branding.paperWidthMm",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    branding["printOfdTicketAds"],
+                    ENDPOINT,
+                    "branding.printOfdTicketAds",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    branding["themeColor"],
+                    ENDPOINT,
+                    "branding.themeColor",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldPresent(
+                    this,
+                    branding["useForceDarkTheme"],
+                    ENDPOINT,
+                    "branding.useForceDarkTheme",
+                    "ReceiptBrandingResponse"
+                )
             }
         }.assertAll()
     }
@@ -90,10 +176,6 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/exit возвращает заполненные обязательные поля ККМ")
     fun shouldReturnFilledRequiredKkmFieldsAfterExitProgramming() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
-
-        enterProgramming(preparedKkm)
-
         val json = exitProgrammingJson(preparedKkm)
         val response = json.getMap<String, Any?>("")
 
@@ -106,23 +188,107 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
             assertRequiredFieldFilled(this, response["updatedAt"], ENDPOINT, "updatedAt", "KkmResponse")
 
             response.objectField("ofdServiceInfo")?.let { ofdServiceInfo ->
-                assertRequiredFieldFilled(this, ofdServiceInfo["geoLatitude"], ENDPOINT, "ofdServiceInfo.geoLatitude", "OfdServiceInfoResponse")
-                assertRequiredFieldFilled(this, ofdServiceInfo["geoLongitude"], ENDPOINT, "ofdServiceInfo.geoLongitude", "OfdServiceInfoResponse")
-                assertRequiredFieldFilled(this, ofdServiceInfo["geoSource"], ENDPOINT, "ofdServiceInfo.geoSource", "OfdServiceInfoResponse")
-                assertRequiredFieldFilled(this, ofdServiceInfo["orgAddress"], ENDPOINT, "ofdServiceInfo.orgAddress", "OfdServiceInfoResponse")
-                assertRequiredFieldFilled(this, ofdServiceInfo["orgAddressKz"], ENDPOINT, "ofdServiceInfo.orgAddressKz", "OfdServiceInfoResponse")
-                assertRequiredFieldFilled(this, ofdServiceInfo["orgInn"], ENDPOINT, "ofdServiceInfo.orgInn", "OfdServiceInfoResponse")
-                assertRequiredFieldFilled(this, ofdServiceInfo["orgOkved"], ENDPOINT, "ofdServiceInfo.orgOkved", "OfdServiceInfoResponse")
-                assertRequiredFieldFilled(this, ofdServiceInfo["orgTitle"], ENDPOINT, "ofdServiceInfo.orgTitle", "OfdServiceInfoResponse")
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["geoLatitude"],
+                    ENDPOINT,
+                    "ofdServiceInfo.geoLatitude",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["geoLongitude"],
+                    ENDPOINT,
+                    "ofdServiceInfo.geoLongitude",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["geoSource"],
+                    ENDPOINT,
+                    "ofdServiceInfo.geoSource",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["orgAddress"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgAddress",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["orgAddressKz"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgAddressKz",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["orgInn"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgInn",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["orgOkved"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgOkved",
+                    "OfdServiceInfoResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    ofdServiceInfo["orgTitle"],
+                    ENDPOINT,
+                    "ofdServiceInfo.orgTitle",
+                    "OfdServiceInfoResponse"
+                )
             }
 
             response.objectField("branding")?.let { branding ->
-                assertRequiredFieldFilled(this, branding["language"], ENDPOINT, "branding.language", "ReceiptBrandingResponse")
-                assertRequiredFieldFilled(this, branding["ofdTicketAds"], ENDPOINT, "branding.ofdTicketAds", "ReceiptBrandingResponse")
-                assertRequiredFieldFilled(this, branding["paperWidthMm"], ENDPOINT, "branding.paperWidthMm", "ReceiptBrandingResponse")
-                assertRequiredFieldFilled(this, branding["printOfdTicketAds"], ENDPOINT, "branding.printOfdTicketAds", "ReceiptBrandingResponse")
-                assertRequiredFieldFilled(this, branding["themeColor"], ENDPOINT, "branding.themeColor", "ReceiptBrandingResponse")
-                assertRequiredFieldFilled(this, branding["useForceDarkTheme"], ENDPOINT, "branding.useForceDarkTheme", "ReceiptBrandingResponse")
+                assertRequiredFieldFilled(
+                    this,
+                    branding["language"],
+                    ENDPOINT,
+                    "branding.language",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    branding["ofdTicketAds"],
+                    ENDPOINT,
+                    "branding.ofdTicketAds",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    branding["paperWidthMm"],
+                    ENDPOINT,
+                    "branding.paperWidthMm",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    branding["printOfdTicketAds"],
+                    ENDPOINT,
+                    "branding.printOfdTicketAds",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    branding["themeColor"],
+                    ENDPOINT,
+                    "branding.themeColor",
+                    "ReceiptBrandingResponse"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    branding["useForceDarkTheme"],
+                    ENDPOINT,
+                    "branding.useForceDarkTheme",
+                    "ReceiptBrandingResponse"
+                )
             }
         }.assertAll()
     }
@@ -131,17 +297,13 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод POST /kkm/{kkmId}/programming/exit возвращает выбранную ККМ в рабочий режим")
     fun shouldReturnSameKkmInRegistrationMode() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
-
-        enterProgramming(preparedKkm)
-
         val json = exitProgrammingJson(preparedKkm)
 
         SoftAssertions().apply {
             assertThat(value(json, "kkmId") as? String)
                 .withFailMessage(
                     "Функциональность API нарушена: POST /kkm/%s/programming/exit вернул данные другой ККМ. " +
-                        "Ожидался kkmId='%s'.",
+                            "Ожидался kkmId='%s'.",
                     preparedKkm.kkmId,
                     preparedKkm.kkmId,
                 )
@@ -165,7 +327,10 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
                 .contentType(ContentType.JSON)
         }
 
-        Allure.step("Готовим предусловие: переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования", enterProgramming)
+        Allure.step(
+            "Готовим предусловие: переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования",
+            enterProgramming
+        )
         kkmToExitAfterTest = preparedKkm
     }
 
@@ -181,7 +346,8 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
                 .response()
         }
 
-        val response: Response = Allure.step("Выводим ККМ kkmId='${preparedKkm.kkmId}' из режима программирования", exitProgramming)
+        val response: Response =
+            Allure.step("Выводим ККМ kkmId='${preparedKkm.kkmId}' из режима программирования", exitProgramming)
         kkmToExitAfterTest = null
 
         return response.jsonPath()
@@ -197,7 +363,10 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
                 .contentType(ContentType.JSON)
         }
 
-        Allure.step("Возвращаем ККМ kkmId='${preparedKkm.kkmId}' из режима программирования после проверки", exitProgramming)
+        Allure.step(
+            "Возвращаем ККМ kkmId='${preparedKkm.kkmId}' из режима программирования после проверки",
+            exitProgramming
+        )
     }
 
     private fun exitProgrammingPath(kkmId: String): String = "/kkm/$kkmId/programming/exit"
@@ -205,7 +374,8 @@ class KkmProgrammingExitSmokeTest : BaseTest() {
     private fun value(json: JsonPath, path: String): Any? = json.get(path)
 
     @Suppress("UNCHECKED_CAST")
-    private fun Map<String, Any?>.objectField(fieldName: String): Map<String, Any?>? = this[fieldName] as? Map<String, Any?>
+    private fun Map<String, Any?>.objectField(fieldName: String): Map<String, Any?>? =
+        this[fieldName] as? Map<String, Any?>
 
     private fun assertRequiredFieldPresent(
         softly: SoftAssertions,

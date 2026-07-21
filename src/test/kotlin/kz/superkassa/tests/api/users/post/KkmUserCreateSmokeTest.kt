@@ -8,7 +8,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.kkm.KkmAuthenticatedTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.reporting.reportStep
@@ -29,13 +29,17 @@ import java.util.concurrent.ThreadLocalRandom
 @DisplayName("POST /kkm/{kkmId}/users: smoke-проверки создания пользователя ККМ")
 @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
 @Suppress("SameParameterValue", "NonAsciiCharacters")
-class KkmUserCreateSmokeTest : BaseTest() {
+class KkmUserCreateSmokeTest : KkmAuthenticatedTest() {
     private val deferredCleanupActions = mutableListOf<() -> Unit>()
 
     @AfterEach
     fun `Очищаем тестовые данные после проверки`() {
         val cleanups = deferredCleanupActions.asReversed().toList()
         deferredCleanupActions.clear()
+        if (cleanups.isEmpty()) {
+            reportStep("Очистка не требуется: пользователь для удаления не был создан") { }
+            return
+        }
         cleanups.forEach { cleanup -> cleanup() }
     }
 
@@ -77,7 +81,6 @@ class KkmUserCreateSmokeTest : BaseTest() {
     }
 
     private fun withCreatedUser(assertions: (Response) -> Unit) {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
         val request = newUserRequest()
         val response = createUser(preparedKkm, request)
         deferredCleanupActions += {
@@ -110,7 +113,7 @@ class KkmUserCreateSmokeTest : BaseTest() {
             ?: findCreatedUserId(preparedKkm, request.name)
             ?: error(
                 "Не удалось очистить тестовые данные: созданный пользователь '${request.name}' " +
-                    "не найден в ККМ '${preparedKkm.kkmId}'.",
+                        "не найден в ККМ '${preparedKkm.kkmId}'.",
             )
 
         reportStep("Удаляем тестового пользователя userId='$userId' после smoke-проверки") {

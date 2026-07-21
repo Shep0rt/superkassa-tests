@@ -8,7 +8,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.kkm.KkmAuthenticatedTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.kkm.PreparedKkmAuth
 import kz.superkassa.tests.framework.reporting.reportStep
@@ -27,12 +27,11 @@ import org.junit.jupiter.api.parallel.ResourceLock
 @DisplayName("GET /kkm/{kkmId}/users: smoke-проверки списка пользователей ККМ")
 @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ)
 @Suppress("SameParameterValue")
-class KkmUsersSmokeTest : BaseTest() {
+class KkmUsersSmokeTest : KkmAuthenticatedTest() {
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /kkm/{kkmId}/users возвращает HTTP 200 и JSON")
     fun shouldReturnUsersSuccessfully() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
 
         getUsersJson(preparedKkm)
     }
@@ -41,7 +40,6 @@ class KkmUsersSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод GET /kkm/{kkmId}/users возвращает непустой список пользователей")
     fun shouldReturnNonEmptyUsersList() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
         val users = getUsersJson(preparedKkm).getList<Map<String, Any?>>("")
 
         assertThat(users)
@@ -56,7 +54,6 @@ class KkmUsersSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод GET /kkm/{kkmId}/users возвращает обязательные поля каждого пользователя")
     fun shouldReturnRequiredUserFields() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
         val users = getUsersJson(preparedKkm).getList<Map<String, Any?>>("")
 
         assertThat(users).isNotNull()
@@ -74,7 +71,6 @@ class KkmUsersSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод GET /kkm/{kkmId}/users возвращает заполненные обязательные поля каждого пользователя")
     fun shouldReturnFilledRequiredUserFields() {
-        val preparedKkm = kkmAuth.prepareFirstKkmAdminPin()
         val users = getUsersJson(preparedKkm).getList<Map<String, Any?>>("")
 
         assertThat(users).isNotNull()

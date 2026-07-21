@@ -16,6 +16,7 @@ import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -28,165 +29,330 @@ import java.util.Locale
 @DisplayName("GET /settings: регрессионные проверки настроек Superkassa")
 @Suppress("SameParameterValue")
 class SettingsRegressionTest : BaseTest() {
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /settings возвращает поля ожидаемых типов")
-    fun shouldReturnExpectedFieldTypes() {
-        val json = getSettingsJson()
-        val response = json.getMap<String, Any?>("")
+    @Nested
+    @ApiRegression
+    @Feature("API")
+    @Story("GET /settings")
+    @Owner("Pavel Michka")
+    @DisplayName("Позитивные проверки GET /settings")
+    inner class PositiveRegressionTests {
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /settings возвращает поля ожидаемых типов")
+        fun shouldReturnExpectedFieldTypes() {
+            val json = getSettingsJson()
+            val response = json.getMap<String, Any?>("")
 
-        SoftAssertions().apply {
-            assertFieldType(this, response, ENDPOINT, "allowChanges", Boolean::class.javaObjectType, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "defaultAdminName", String::class.java, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "defaultAdminPin", String::class.java, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "defaultCashierName", String::class.java, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "defaultCashierPin", String::class.java, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "deliveryChannels", List::class.java, "CoreSettingsDto")
-            assertArrayItemsType(this, response["deliveryChannels"], ENDPOINT, "deliveryChannels", String::class.java, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "mode", String::class.java, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "nodeId", String::class.java, "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "ofdProtocolVersion", String::class.java, "CoreSettingsDto")
-            assertIntegerFieldType(this, response, ENDPOINT, "ofdReconnectIntervalSeconds", "CoreSettingsDto")
-            assertIntegerFieldType(this, response, ENDPOINT, "ofdTimeoutSeconds", "CoreSettingsDto")
-            assertFieldType(this, response, ENDPOINT, "storage", Map::class.java, "CoreSettingsDto")
+            SoftAssertions().apply {
+                assertFieldType(
+                    this,
+                    response,
+                    ENDPOINT,
+                    "allowChanges",
+                    Boolean::class.javaObjectType,
+                    "CoreSettingsDto"
+                )
+                assertFieldType(this, response, ENDPOINT, "defaultAdminName", String::class.java, "CoreSettingsDto")
+                assertFieldType(this, response, ENDPOINT, "defaultAdminPin", String::class.java, "CoreSettingsDto")
+                assertFieldType(this, response, ENDPOINT, "defaultCashierName", String::class.java, "CoreSettingsDto")
+                assertFieldType(this, response, ENDPOINT, "defaultCashierPin", String::class.java, "CoreSettingsDto")
+                assertFieldType(this, response, ENDPOINT, "deliveryChannels", List::class.java, "CoreSettingsDto")
+                assertArrayItemsType(
+                    this,
+                    response["deliveryChannels"],
+                    ENDPOINT,
+                    "deliveryChannels",
+                    String::class.java,
+                    "CoreSettingsDto"
+                )
+                assertFieldType(this, response, ENDPOINT, "mode", String::class.java, "CoreSettingsDto")
+                assertFieldType(this, response, ENDPOINT, "nodeId", String::class.java, "CoreSettingsDto")
+                assertFieldType(this, response, ENDPOINT, "ofdProtocolVersion", String::class.java, "CoreSettingsDto")
+                assertIntegerFieldType(this, response, ENDPOINT, "ofdReconnectIntervalSeconds", "CoreSettingsDto")
+                assertIntegerFieldType(this, response, ENDPOINT, "ofdTimeoutSeconds", "CoreSettingsDto")
+                assertFieldType(this, response, ENDPOINT, "storage", Map::class.java, "CoreSettingsDto")
 
-            response.objectField("storage")?.let { storage ->
-                assertFieldType(this, storage, ENDPOINT, "engine", String::class.java, "StorageSettingsDto")
-                assertFieldType(this, storage, ENDPOINT, "jdbcUrl", String::class.java, "StorageSettingsDto")
-                assertOptionalFieldType(this, storage, ENDPOINT, "password", String::class.java, "StorageSettingsDto")
-                assertOptionalFieldType(this, storage, ENDPOINT, "user", String::class.java, "StorageSettingsDto")
-            }
-
-            response.objectField("delivery")?.let { delivery ->
-                assertFieldType(this, delivery, ENDPOINT, "channels", List::class.java, "DeliverySettingsDto")
-                assertDeliveryChannelsTypes(this, delivery.listField("channels"))
-
-                delivery.objectField("print")?.let { print ->
-                    assertFieldType(this, print, ENDPOINT, "enabled", Boolean::class.javaObjectType, "PrintDeliverySettingsDto")
-                    assertIntegerFieldType(this, print, ENDPOINT, "paperWidthMm", "PrintDeliverySettingsDto")
-
-                    print.objectField("connection")?.let { connection ->
-                        assertFieldType(this, connection, ENDPOINT, "type", String::class.java, "PrintConnectionSettingsDto")
-                        assertOptionalFieldType(this, connection, ENDPOINT, "host", String::class.java, "PrintConnectionSettingsDto")
-                        assertOptionalIntegerFieldType(this, connection, ENDPOINT, "port", "PrintConnectionSettingsDto")
-                    }
-                }
-
-                delivery.objectField("email")?.let { email ->
-                    assertFieldType(this, email, ENDPOINT, "from", String::class.java, "EmailProviderSettingsDto")
-                    assertFieldType(this, email, ENDPOINT, "host", String::class.java, "EmailProviderSettingsDto")
-                    assertIntegerFieldType(this, email, ENDPOINT, "port", "EmailProviderSettingsDto")
-                    assertOptionalFieldType(this, email, ENDPOINT, "password", String::class.java, "EmailProviderSettingsDto")
-                    assertOptionalFieldType(this, email, ENDPOINT, "user", String::class.java, "EmailProviderSettingsDto")
-                }
-
-                delivery.objectField("sms")?.let { sms ->
-                    assertOptionalFieldType(this, sms, ENDPOINT, "apiKey", String::class.java, "SmsProviderSettingsDto")
-                    assertOptionalFieldType(this, sms, ENDPOINT, "providerUrl", String::class.java, "SmsProviderSettingsDto")
-                }
-
-                delivery.objectField("telegram")?.let { telegram ->
-                    assertOptionalFieldType(this, telegram, ENDPOINT, "botToken", String::class.java, "TelegramProviderSettingsDto")
-                }
-
-                delivery.objectField("whatsapp")?.let { whatsapp ->
-                    assertOptionalFieldType(this, whatsapp, ENDPOINT, "accessToken", String::class.java, "WhatsAppProviderSettingsDto")
-                    assertOptionalFieldType(this, whatsapp, ENDPOINT, "phoneNumberId", String::class.java, "WhatsAppProviderSettingsDto")
-                }
-            }
-        }.assertAll()
-    }
-
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /settings не возвращает поля вне Swagger-контракта")
-    fun shouldNotReturnFieldsOutsideSwaggerContract() {
-        val json = getSettingsJson()
-        val response = json.getMap<String, Any?>("")
-
-        SoftAssertions().apply {
-            assertOnlySwaggerFields(this, response, ENDPOINT, "CoreSettingsDto", CORE_SETTINGS_FIELDS)
-
-            response.objectField("storage")?.let { storage ->
-                assertOnlySwaggerFields(this, storage, ENDPOINT, "StorageSettingsDto", STORAGE_SETTINGS_FIELDS)
-            }
-
-            response.objectField("delivery")?.let { delivery ->
-                assertOnlySwaggerFields(this, delivery, ENDPOINT, "DeliverySettingsDto", DELIVERY_SETTINGS_FIELDS)
-
-                delivery.listField("channels").forEach { channel ->
-                    assertOnlySwaggerFields(this, channel, ENDPOINT, "DeliveryChannelSettingsDto", DELIVERY_CHANNEL_SETTINGS_FIELDS)
-                }
-
-                delivery.objectField("print")?.let { print ->
-                    assertOnlySwaggerFields(this, print, ENDPOINT, "PrintDeliverySettingsDto", PRINT_DELIVERY_SETTINGS_FIELDS)
-
-                    print.objectField("connection")?.let { connection ->
-                        assertOnlySwaggerFields(this, connection, ENDPOINT, "PrinterConnectionSettingsDto", PRINT_CONNECTION_SETTINGS_FIELDS)
-                    }
-                }
-
-                delivery.objectField("email")?.let { email ->
-                    assertOnlySwaggerFields(this, email, ENDPOINT, "EmailProviderSettingsDto", EMAIL_PROVIDER_SETTINGS_FIELDS)
-                }
-
-                delivery.objectField("sms")?.let { sms ->
-                    assertOnlySwaggerFields(this, sms, ENDPOINT, "SmsProviderSettingsDto", SMS_PROVIDER_SETTINGS_FIELDS)
-                }
-
-                delivery.objectField("telegram")?.let { telegram ->
-                    assertOnlySwaggerFields(this, telegram, ENDPOINT, "TelegramProviderSettingsDto", TELEGRAM_PROVIDER_SETTINGS_FIELDS)
-                }
-
-                delivery.objectField("whatsapp")?.let { whatsapp ->
-                    assertOnlySwaggerFields(this, whatsapp, ENDPOINT, "WhatsAppProviderSettingsDto", WHATSAPP_PROVIDER_SETTINGS_FIELDS)
-                }
-            }
-        }.assertAll()
-    }
-
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /settings возвращает допустимые значения enum-полей")
-    fun shouldReturnExpectedEnumValues() {
-        val json = getSettingsJson()
-        val response = json.getMap<String, Any?>("")
-
-        SoftAssertions().apply {
-            assertRequiredEnumValue(this, response, ENDPOINT, "mode", "CoreSettingsDto", ApiEnumValues.INFO_MODES)
-        }.assertAll()
-    }
-
-    @Test
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод GET /settings не раскрывает секреты в JDBC URL")
-    fun shouldNotExposeSecretsInJdbcUrl() {
-        val json = getSettingsJson()
-        val jdbcUrl = (value(json, "storage.jdbcUrl") as? String)?.lowercase(Locale.ROOT)
-
-        SoftAssertions().apply {
-            FORBIDDEN_JDBC_URL_FRAGMENTS.forEach { fragment ->
-                assertThat(jdbcUrl)
-                    .withFailMessage(
-                        "Безопасность API нарушена: storage.jdbcUrl в ответе GET /settings содержит секретный фрагмент '%s'.",
-                        fragment,
+                response.objectField("storage")?.let { storage ->
+                    assertFieldType(this, storage, ENDPOINT, "engine", String::class.java, "StorageSettingsDto")
+                    assertFieldType(this, storage, ENDPOINT, "jdbcUrl", String::class.java, "StorageSettingsDto")
+                    assertOptionalFieldType(
+                        this,
+                        storage,
+                        ENDPOINT,
+                        "password",
+                        String::class.java,
+                        "StorageSettingsDto"
                     )
-                    .doesNotContain(fragment)
-            }
-        }.assertAll()
+                    assertOptionalFieldType(this, storage, ENDPOINT, "user", String::class.java, "StorageSettingsDto")
+                }
+
+                response.objectField("delivery")?.let { delivery ->
+                    assertFieldType(this, delivery, ENDPOINT, "channels", List::class.java, "DeliverySettingsDto")
+                    assertDeliveryChannelsTypes(this, delivery.listField("channels"))
+
+                    delivery.objectField("print")?.let { print ->
+                        assertFieldType(
+                            this,
+                            print,
+                            ENDPOINT,
+                            "enabled",
+                            Boolean::class.javaObjectType,
+                            "PrintDeliverySettingsDto"
+                        )
+                        assertIntegerFieldType(this, print, ENDPOINT, "paperWidthMm", "PrintDeliverySettingsDto")
+
+                        print.objectField("connection")?.let { connection ->
+                            assertFieldType(
+                                this,
+                                connection,
+                                ENDPOINT,
+                                "type",
+                                String::class.java,
+                                "PrintConnectionSettingsDto"
+                            )
+                            assertOptionalFieldType(
+                                this,
+                                connection,
+                                ENDPOINT,
+                                "host",
+                                String::class.java,
+                                "PrintConnectionSettingsDto"
+                            )
+                            assertOptionalIntegerFieldType(
+                                this,
+                                connection,
+                                ENDPOINT,
+                                "port",
+                                "PrintConnectionSettingsDto"
+                            )
+                        }
+                    }
+
+                    delivery.objectField("email")?.let { email ->
+                        assertFieldType(this, email, ENDPOINT, "from", String::class.java, "EmailProviderSettingsDto")
+                        assertFieldType(this, email, ENDPOINT, "host", String::class.java, "EmailProviderSettingsDto")
+                        assertIntegerFieldType(this, email, ENDPOINT, "port", "EmailProviderSettingsDto")
+                        assertOptionalFieldType(
+                            this,
+                            email,
+                            ENDPOINT,
+                            "password",
+                            String::class.java,
+                            "EmailProviderSettingsDto"
+                        )
+                        assertOptionalFieldType(
+                            this,
+                            email,
+                            ENDPOINT,
+                            "user",
+                            String::class.java,
+                            "EmailProviderSettingsDto"
+                        )
+                    }
+
+                    delivery.objectField("sms")?.let { sms ->
+                        assertOptionalFieldType(
+                            this,
+                            sms,
+                            ENDPOINT,
+                            "apiKey",
+                            String::class.java,
+                            "SmsProviderSettingsDto"
+                        )
+                        assertOptionalFieldType(
+                            this,
+                            sms,
+                            ENDPOINT,
+                            "providerUrl",
+                            String::class.java,
+                            "SmsProviderSettingsDto"
+                        )
+                    }
+
+                    delivery.objectField("telegram")?.let { telegram ->
+                        assertOptionalFieldType(
+                            this,
+                            telegram,
+                            ENDPOINT,
+                            "botToken",
+                            String::class.java,
+                            "TelegramProviderSettingsDto"
+                        )
+                    }
+
+                    delivery.objectField("whatsapp")?.let { whatsapp ->
+                        assertOptionalFieldType(
+                            this,
+                            whatsapp,
+                            ENDPOINT,
+                            "accessToken",
+                            String::class.java,
+                            "WhatsAppProviderSettingsDto"
+                        )
+                        assertOptionalFieldType(
+                            this,
+                            whatsapp,
+                            ENDPOINT,
+                            "phoneNumberId",
+                            String::class.java,
+                            "WhatsAppProviderSettingsDto"
+                        )
+                    }
+                }
+            }.assertAll()
+        }
+
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /settings не возвращает поля вне Swagger-контракта")
+        fun shouldNotReturnFieldsOutsideSwaggerContract() {
+            val json = getSettingsJson()
+            val response = json.getMap<String, Any?>("")
+
+            SoftAssertions().apply {
+                assertOnlySwaggerFields(this, response, ENDPOINT, "CoreSettingsDto", CORE_SETTINGS_FIELDS)
+
+                response.objectField("storage")?.let { storage ->
+                    assertOnlySwaggerFields(this, storage, ENDPOINT, "StorageSettingsDto", STORAGE_SETTINGS_FIELDS)
+                }
+
+                response.objectField("delivery")?.let { delivery ->
+                    assertOnlySwaggerFields(this, delivery, ENDPOINT, "DeliverySettingsDto", DELIVERY_SETTINGS_FIELDS)
+
+                    delivery.listField("channels").forEach { channel ->
+                        assertOnlySwaggerFields(
+                            this,
+                            channel,
+                            ENDPOINT,
+                            "DeliveryChannelSettingsDto",
+                            DELIVERY_CHANNEL_SETTINGS_FIELDS
+                        )
+                    }
+
+                    delivery.objectField("print")?.let { print ->
+                        assertOnlySwaggerFields(
+                            this,
+                            print,
+                            ENDPOINT,
+                            "PrintDeliverySettingsDto",
+                            PRINT_DELIVERY_SETTINGS_FIELDS
+                        )
+
+                        print.objectField("connection")?.let { connection ->
+                            assertOnlySwaggerFields(
+                                this,
+                                connection,
+                                ENDPOINT,
+                                "PrinterConnectionSettingsDto",
+                                PRINT_CONNECTION_SETTINGS_FIELDS
+                            )
+                        }
+                    }
+
+                    delivery.objectField("email")?.let { email ->
+                        assertOnlySwaggerFields(
+                            this,
+                            email,
+                            ENDPOINT,
+                            "EmailProviderSettingsDto",
+                            EMAIL_PROVIDER_SETTINGS_FIELDS
+                        )
+                    }
+
+                    delivery.objectField("sms")?.let { sms ->
+                        assertOnlySwaggerFields(
+                            this,
+                            sms,
+                            ENDPOINT,
+                            "SmsProviderSettingsDto",
+                            SMS_PROVIDER_SETTINGS_FIELDS
+                        )
+                    }
+
+                    delivery.objectField("telegram")?.let { telegram ->
+                        assertOnlySwaggerFields(
+                            this,
+                            telegram,
+                            ENDPOINT,
+                            "TelegramProviderSettingsDto",
+                            TELEGRAM_PROVIDER_SETTINGS_FIELDS
+                        )
+                    }
+
+                    delivery.objectField("whatsapp")?.let { whatsapp ->
+                        assertOnlySwaggerFields(
+                            this,
+                            whatsapp,
+                            ENDPOINT,
+                            "WhatsAppProviderSettingsDto",
+                            WHATSAPP_PROVIDER_SETTINGS_FIELDS
+                        )
+                    }
+                }
+            }.assertAll()
+        }
+
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /settings возвращает допустимые значения enum-полей")
+        fun shouldReturnExpectedEnumValues() {
+            val json = getSettingsJson()
+            val response = json.getMap<String, Any?>("")
+
+            SoftAssertions().apply {
+                assertRequiredEnumValue(this, response, ENDPOINT, "mode", "CoreSettingsDto", ApiEnumValues.INFO_MODES)
+            }.assertAll()
+        }
+
+        @Test
+        @Severity(SeverityLevel.CRITICAL)
+        @DisplayName("Метод GET /settings не раскрывает секреты в JDBC URL")
+        fun shouldNotExposeSecretsInJdbcUrl() {
+            val json = getSettingsJson()
+            val jdbcUrl = (value(json, "storage.jdbcUrl") as? String)?.lowercase(Locale.ROOT)
+
+            SoftAssertions().apply {
+                FORBIDDEN_JDBC_URL_FRAGMENTS.forEach { fragment ->
+                    assertThat(jdbcUrl)
+                        .withFailMessage(
+                            "Безопасность API нарушена: storage.jdbcUrl в ответе GET /settings содержит секретный фрагмент '%s'.",
+                            fragment,
+                        )
+                        .doesNotContain(fragment)
+                }
+            }.assertAll()
+        }
+
     }
 
-    @ParameterizedTest(name = "HTTP {0} /settings возвращает 405")
-    @EnumSource(value = Method::class, names = ["POST", "PATCH", "DELETE"])
-    @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Метод /settings возвращает 405 для HTTP-методов кроме GET и PUT")
-    fun shouldReturnMethodNotAllowedForUnsupportedMethods(method: Method) {
-        reportStep("Проверяем, что HTTP $method /settings не поддерживается") {
-            superkassa.request()
-                .`when`()
-                .request(method, "/settings")
-                .then()
-                .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+    @Nested
+    @ApiRegression
+    @Feature("API")
+    @Story("GET /settings")
+    @Owner("Pavel Michka")
+    @DisplayName("Негативные проверки GET /settings")
+    inner class NegativeRegressionTests {
+        @Nested
+        @ApiRegression
+        @Feature("API")
+        @Story("GET /settings")
+        @Owner("Pavel Michka")
+        @DisplayName("Проверки неподдерживаемых HTTP-методов")
+        inner class UnsupportedHttpMethodsTests {
+            @ParameterizedTest(name = "HTTP {0} /settings возвращает 405")
+            @EnumSource(value = Method::class, names = ["POST", "PATCH", "DELETE"])
+            @Severity(SeverityLevel.NORMAL)
+            @DisplayName("Метод /settings возвращает 405 для HTTP-методов кроме GET и PUT")
+            fun shouldReturnMethodNotAllowedForUnsupportedMethods(method: Method) {
+                reportStep("Проверяем, что HTTP $method /settings не поддерживается") {
+                    superkassa.request()
+                        .`when`()
+                        .request(method, "/settings")
+                        .then()
+                        .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
+                }
+            }
+
         }
     }
 
@@ -216,11 +382,25 @@ class SettingsRegressionTest : BaseTest() {
         schemaName: String,
     ) {
         softly.assertThat(item)
-            .withFailMessage(ApiContractErrorMessages.requiredFieldWithTypeMissing(endpoint, fieldName, expectedType.simpleName, schemaName))
+            .withFailMessage(
+                ApiContractErrorMessages.requiredFieldWithTypeMissing(
+                    endpoint,
+                    fieldName,
+                    expectedType.simpleName,
+                    schemaName
+                )
+            )
             .containsKey(fieldName)
 
         softly.assertThat(item[fieldName])
-            .withFailMessage(ApiContractErrorMessages.fieldTypeMismatch(endpoint, fieldName, expectedType.simpleName, schemaName))
+            .withFailMessage(
+                ApiContractErrorMessages.fieldTypeMismatch(
+                    endpoint,
+                    fieldName,
+                    expectedType.simpleName,
+                    schemaName
+                )
+            )
             .isInstanceOf(expectedType)
     }
 
@@ -232,7 +412,14 @@ class SettingsRegressionTest : BaseTest() {
         schemaName: String,
     ) {
         softly.assertThat(item)
-            .withFailMessage(ApiContractErrorMessages.requiredFieldWithTypeMissing(endpoint, fieldName, "Integer", schemaName))
+            .withFailMessage(
+                ApiContractErrorMessages.requiredFieldWithTypeMissing(
+                    endpoint,
+                    fieldName,
+                    "Integer",
+                    schemaName
+                )
+            )
             .containsKey(fieldName)
 
         softly.assertThat(item[fieldName])
@@ -250,7 +437,14 @@ class SettingsRegressionTest : BaseTest() {
         val fieldValue = item[fieldName] ?: return
 
         softly.assertThat(fieldValue)
-            .withFailMessage(ApiContractErrorMessages.optionalFieldTypeMismatch(endpoint, fieldName, "Integer", schemaName))
+            .withFailMessage(
+                ApiContractErrorMessages.optionalFieldTypeMismatch(
+                    endpoint,
+                    fieldName,
+                    "Integer",
+                    schemaName
+                )
+            )
             .isInstanceOfAny(Int::class.javaObjectType, Long::class.javaObjectType)
     }
 
@@ -265,7 +459,14 @@ class SettingsRegressionTest : BaseTest() {
         val fieldValue = item[fieldName] ?: return
 
         softly.assertThat(fieldValue)
-            .withFailMessage(ApiContractErrorMessages.optionalFieldTypeMismatch(endpoint, fieldName, expectedType.simpleName, schemaName))
+            .withFailMessage(
+                ApiContractErrorMessages.optionalFieldTypeMismatch(
+                    endpoint,
+                    fieldName,
+                    expectedType.simpleName,
+                    schemaName
+                )
+            )
             .isInstanceOf(expectedType)
     }
 
@@ -279,7 +480,15 @@ class SettingsRegressionTest : BaseTest() {
     ) {
         (fieldValue as? List<*>)?.forEachIndexed { index, item ->
             softly.assertThat(item)
-                .withFailMessage(ApiContractErrorMessages.arrayItemTypeMismatch(endpoint, fieldName, index, expectedType.simpleName, schemaName))
+                .withFailMessage(
+                    ApiContractErrorMessages.arrayItemTypeMismatch(
+                        endpoint,
+                        fieldName,
+                        index,
+                        expectedType.simpleName,
+                        schemaName
+                    )
+                )
                 .isInstanceOf(expectedType)
         }
     }
@@ -290,15 +499,37 @@ class SettingsRegressionTest : BaseTest() {
     ) {
         channels.forEach { channel ->
             assertFieldType(softly, channel, ENDPOINT, "channel", String::class.java, "DeliveryChannelSettingsDto")
-            assertOptionalFieldType(softly, channel, ENDPOINT, "destination", String::class.java, "DeliveryChannelSettingsDto")
-            assertFieldType(softly, channel, ENDPOINT, "documentFormat", String::class.java, "DeliveryChannelSettingsDto")
-            assertFieldType(softly, channel, ENDPOINT, "enabled", Boolean::class.javaObjectType, "DeliveryChannelSettingsDto")
+            assertOptionalFieldType(
+                softly,
+                channel,
+                ENDPOINT,
+                "destination",
+                String::class.java,
+                "DeliveryChannelSettingsDto"
+            )
+            assertFieldType(
+                softly,
+                channel,
+                ENDPOINT,
+                "documentFormat",
+                String::class.java,
+                "DeliveryChannelSettingsDto"
+            )
+            assertFieldType(
+                softly,
+                channel,
+                ENDPOINT,
+                "enabled",
+                Boolean::class.javaObjectType,
+                "DeliveryChannelSettingsDto"
+            )
             assertFieldType(softly, channel, ENDPOINT, "payloadType", String::class.java, "DeliveryChannelSettingsDto")
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun Map<String, Any?>.objectField(fieldName: String): Map<String, Any?>? = this[fieldName] as? Map<String, Any?>
+    private fun Map<String, Any?>.objectField(fieldName: String): Map<String, Any?>? =
+        this[fieldName] as? Map<String, Any?>
 
     @Suppress("UNCHECKED_CAST")
     private fun Map<String, Any?>.listField(fieldName: String): List<Map<String, Any?>> =
@@ -357,7 +588,8 @@ class SettingsRegressionTest : BaseTest() {
         )
         val STORAGE_SETTINGS_FIELDS = setOf("engine", "jdbcUrl", "password", "user")
         val DELIVERY_SETTINGS_FIELDS = setOf("channels", "email", "print", "sms", "telegram", "whatsapp")
-        val DELIVERY_CHANNEL_SETTINGS_FIELDS = setOf("channel", "destination", "documentFormat", "enabled", "payloadType")
+        val DELIVERY_CHANNEL_SETTINGS_FIELDS =
+            setOf("channel", "destination", "documentFormat", "enabled", "payloadType")
         val PRINT_DELIVERY_SETTINGS_FIELDS = setOf("connection", "enabled", "paperWidthMm")
         val PRINT_CONNECTION_SETTINGS_FIELDS = setOf("host", "port", "type")
         val EMAIL_PROVIDER_SETTINGS_FIELDS = setOf("from", "host", "password", "port", "user")

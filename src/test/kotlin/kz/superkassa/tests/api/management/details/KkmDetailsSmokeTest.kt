@@ -13,6 +13,7 @@ import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
@@ -21,7 +22,15 @@ import org.junit.jupiter.api.Test
 @Story("GET /kkm/{kkmId}")
 @Owner("Pavel Michka")
 @DisplayName("GET /kkm/{kkmId}: smoke-проверки получения информации о ККМ")
+@Suppress("NonAsciiCharacters")
 class KkmDetailsSmokeTest : BaseTest() {
+    private lateinit var kkmId: String
+
+    @BeforeEach
+    fun `Получаем контрольную ККМ`() {
+        kkmId = firstKkmIdOrSkip()
+    }
+
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /kkm/{kkmId} без авторизации возвращает HTTP 200 и JSON")
@@ -102,8 +111,6 @@ class KkmDetailsSmokeTest : BaseTest() {
     }
 
     private fun getKkmDetails(): Map<String, Any?> {
-        val kkmId = firstKkmIdOrSkip()
-
         return reportStep("Получаем информацию о ККМ kkmId='$kkmId' через GET /kkm/$kkmId без авторизации") {
             superkassa.requestWithoutAuthorization()
                 .`when`()

@@ -16,6 +16,7 @@ import kz.superkassa.tests.framework.tags.ApiSmoke
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
@@ -24,16 +25,20 @@ import org.junit.jupiter.api.Test
 @Story("PUT /settings")
 @Owner("Pavel Michka")
 @DisplayName("PUT /settings: smoke-проверки обновления настроек Superkassa")
-@Suppress("SameParameterValue")
+@Suppress("SameParameterValue", "NonAsciiCharacters")
 class SettingsPutSmokeTest : BaseTest() {
+    private lateinit var currentSettings: Map<String, Any?>
+
+    @BeforeEach
+    fun `Получаем текущие настройки и проверяем возможность изменения`() {
+        currentSettings = getCurrentSettings()
+        assumeSettingsChangesAllowed(currentSettings)
+    }
+
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод PUT /settings принимает текущие настройки и возвращает HTTP 200 и JSON")
     fun shouldUpdateSettingsWithCurrentConfigurationSuccessfully() {
-        val currentSettings = getCurrentSettings()
-
-        assumeSettingsChangesAllowed(currentSettings)
-
         reportStep("Отправляем текущие настройки через PUT /settings") {
             superkassa.request()
                 .body(currentSettings)
@@ -49,31 +54,93 @@ class SettingsPutSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод PUT /settings возвращает обязательные поля после обновления")
     fun shouldReturnRequiredFieldsAfterUpdate() {
-        val currentSettings = getCurrentSettings()
-
-        assumeSettingsChangesAllowed(currentSettings)
-
         val json = putSettingsJson(currentSettings)
 
         SoftAssertions().apply {
             assertRequiredFieldPresent(this, value(json, "allowChanges"), ENDPOINT, "allowChanges", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "defaultAdminName"), ENDPOINT, "defaultAdminName", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "defaultAdminPin"), ENDPOINT, "defaultAdminPin", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "defaultCashierName"), ENDPOINT, "defaultCashierName", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "defaultCashierPin"), ENDPOINT, "defaultCashierPin", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "deliveryChannels"), ENDPOINT, "deliveryChannels", "CoreSettingsDto")
+            assertRequiredFieldPresent(
+                this,
+                value(json, "defaultAdminName"),
+                ENDPOINT,
+                "defaultAdminName",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldPresent(
+                this,
+                value(json, "defaultAdminPin"),
+                ENDPOINT,
+                "defaultAdminPin",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldPresent(
+                this,
+                value(json, "defaultCashierName"),
+                ENDPOINT,
+                "defaultCashierName",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldPresent(
+                this,
+                value(json, "defaultCashierPin"),
+                ENDPOINT,
+                "defaultCashierPin",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldPresent(
+                this,
+                value(json, "deliveryChannels"),
+                ENDPOINT,
+                "deliveryChannels",
+                "CoreSettingsDto"
+            )
             assertRequiredFieldPresent(this, value(json, "mode"), ENDPOINT, "mode", "CoreSettingsDto")
             assertRequiredFieldPresent(this, value(json, "nodeId"), ENDPOINT, "nodeId", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "ofdProtocolVersion"), ENDPOINT, "ofdProtocolVersion", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "ofdReconnectIntervalSeconds"), ENDPOINT, "ofdReconnectIntervalSeconds", "CoreSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "ofdTimeoutSeconds"), ENDPOINT, "ofdTimeoutSeconds", "CoreSettingsDto")
+            assertRequiredFieldPresent(
+                this,
+                value(json, "ofdProtocolVersion"),
+                ENDPOINT,
+                "ofdProtocolVersion",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldPresent(
+                this,
+                value(json, "ofdReconnectIntervalSeconds"),
+                ENDPOINT,
+                "ofdReconnectIntervalSeconds",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldPresent(
+                this,
+                value(json, "ofdTimeoutSeconds"),
+                ENDPOINT,
+                "ofdTimeoutSeconds",
+                "CoreSettingsDto"
+            )
             assertRequiredFieldPresent(this, value(json, "storage"), ENDPOINT, "storage", "CoreSettingsDto")
 
-            assertRequiredFieldPresent(this, value(json, "storage.engine"), ENDPOINT, "storage.engine", "StorageSettingsDto")
-            assertRequiredFieldPresent(this, value(json, "storage.jdbcUrl"), ENDPOINT, "storage.jdbcUrl", "StorageSettingsDto")
+            assertRequiredFieldPresent(
+                this,
+                value(json, "storage.engine"),
+                ENDPOINT,
+                "storage.engine",
+                "StorageSettingsDto"
+            )
+            assertRequiredFieldPresent(
+                this,
+                value(json, "storage.jdbcUrl"),
+                ENDPOINT,
+                "storage.jdbcUrl",
+                "StorageSettingsDto"
+            )
 
             json.optionalObject("delivery")?.let {
-                assertRequiredFieldPresent(this, value(json, "delivery.channels"), ENDPOINT, "delivery.channels", "DeliverySettingsDto")
+                assertRequiredFieldPresent(
+                    this,
+                    value(json, "delivery.channels"),
+                    ENDPOINT,
+                    "delivery.channels",
+                    "DeliverySettingsDto"
+                )
             }
 
             json.optionalList<Map<String, Any?>>("delivery.channels")?.forEachIndexed { index, channel ->
@@ -113,35 +180,103 @@ class SettingsPutSmokeTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Метод PUT /settings возвращает заполненные обязательные поля после обновления")
     fun shouldReturnFilledRequiredFieldsAfterUpdate() {
-        val currentSettings = getCurrentSettings()
-
-        assumeSettingsChangesAllowed(currentSettings)
-
         val json = putSettingsJson(currentSettings)
 
         SoftAssertions().apply {
             assertRequiredFieldFilled(this, value(json, "allowChanges"), ENDPOINT, "allowChanges", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "defaultAdminName"), ENDPOINT, "defaultAdminName", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "defaultAdminPin"), ENDPOINT, "defaultAdminPin", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "defaultCashierName"), ENDPOINT, "defaultCashierName", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "defaultCashierPin"), ENDPOINT, "defaultCashierPin", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "deliveryChannels"), ENDPOINT, "deliveryChannels", "CoreSettingsDto")
+            assertRequiredFieldFilled(
+                this,
+                value(json, "defaultAdminName"),
+                ENDPOINT,
+                "defaultAdminName",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldFilled(
+                this,
+                value(json, "defaultAdminPin"),
+                ENDPOINT,
+                "defaultAdminPin",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldFilled(
+                this,
+                value(json, "defaultCashierName"),
+                ENDPOINT,
+                "defaultCashierName",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldFilled(
+                this,
+                value(json, "defaultCashierPin"),
+                ENDPOINT,
+                "defaultCashierPin",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldFilled(
+                this,
+                value(json, "deliveryChannels"),
+                ENDPOINT,
+                "deliveryChannels",
+                "CoreSettingsDto"
+            )
             assertRequiredFieldFilled(this, value(json, "mode"), ENDPOINT, "mode", "CoreSettingsDto")
             assertRequiredFieldFilled(this, value(json, "nodeId"), ENDPOINT, "nodeId", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "ofdProtocolVersion"), ENDPOINT, "ofdProtocolVersion", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "ofdReconnectIntervalSeconds"), ENDPOINT, "ofdReconnectIntervalSeconds", "CoreSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "ofdTimeoutSeconds"), ENDPOINT, "ofdTimeoutSeconds", "CoreSettingsDto")
+            assertRequiredFieldFilled(
+                this,
+                value(json, "ofdProtocolVersion"),
+                ENDPOINT,
+                "ofdProtocolVersion",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldFilled(
+                this,
+                value(json, "ofdReconnectIntervalSeconds"),
+                ENDPOINT,
+                "ofdReconnectIntervalSeconds",
+                "CoreSettingsDto"
+            )
+            assertRequiredFieldFilled(
+                this,
+                value(json, "ofdTimeoutSeconds"),
+                ENDPOINT,
+                "ofdTimeoutSeconds",
+                "CoreSettingsDto"
+            )
             assertRequiredFieldFilled(this, value(json, "storage"), ENDPOINT, "storage", "CoreSettingsDto")
 
-            assertRequiredFieldFilled(this, value(json, "storage.engine"), ENDPOINT, "storage.engine", "StorageSettingsDto")
-            assertRequiredFieldFilled(this, value(json, "storage.jdbcUrl"), ENDPOINT, "storage.jdbcUrl", "StorageSettingsDto")
+            assertRequiredFieldFilled(
+                this,
+                value(json, "storage.engine"),
+                ENDPOINT,
+                "storage.engine",
+                "StorageSettingsDto"
+            )
+            assertRequiredFieldFilled(
+                this,
+                value(json, "storage.jdbcUrl"),
+                ENDPOINT,
+                "storage.jdbcUrl",
+                "StorageSettingsDto"
+            )
 
             json.optionalObject("delivery")?.let {
-                assertRequiredFieldFilled(this, value(json, "delivery.channels"), ENDPOINT, "delivery.channels", "DeliverySettingsDto")
+                assertRequiredFieldFilled(
+                    this,
+                    value(json, "delivery.channels"),
+                    ENDPOINT,
+                    "delivery.channels",
+                    "DeliverySettingsDto"
+                )
             }
 
             json.optionalList<Map<String, Any?>>("delivery.channels")?.forEachIndexed { index, channel ->
-                assertRequiredFieldFilled(this, channel["channel"], ENDPOINT, "delivery.channels[$index].channel", "DeliveryChannelSettingsDto")
+                assertRequiredFieldFilled(
+                    this,
+                    channel["channel"],
+                    ENDPOINT,
+                    "delivery.channels[$index].channel",
+                    "DeliveryChannelSettingsDto"
+                )
                 assertRequiredFieldFilled(
                     this,
                     channel["documentFormat"],
@@ -149,8 +284,20 @@ class SettingsPutSmokeTest : BaseTest() {
                     "delivery.channels[$index].documentFormat",
                     "DeliveryChannelSettingsDto",
                 )
-                assertRequiredFieldFilled(this, channel["enabled"], ENDPOINT, "delivery.channels[$index].enabled", "DeliveryChannelSettingsDto")
-                assertRequiredFieldFilled(this, channel["payloadType"], ENDPOINT, "delivery.channels[$index].payloadType", "DeliveryChannelSettingsDto")
+                assertRequiredFieldFilled(
+                    this,
+                    channel["enabled"],
+                    ENDPOINT,
+                    "delivery.channels[$index].enabled",
+                    "DeliveryChannelSettingsDto"
+                )
+                assertRequiredFieldFilled(
+                    this,
+                    channel["payloadType"],
+                    ENDPOINT,
+                    "delivery.channels[$index].payloadType",
+                    "DeliveryChannelSettingsDto"
+                )
             }
         }.assertAll()
     }
@@ -190,7 +337,7 @@ class SettingsPutSmokeTest : BaseTest() {
         assertThat(settings)
             .withFailMessage(
                 "Контракт API нарушен: в ответе GET /settings отсутствует обязательное поле 'allowChanges'. " +
-                    "Поле 'allowChanges' помечено как required в Swagger-схеме CoreSettingsDto.",
+                        "Поле 'allowChanges' помечено как required в Swagger-схеме CoreSettingsDto.",
             )
             .containsKey("allowChanges")
 
@@ -199,7 +346,7 @@ class SettingsPutSmokeTest : BaseTest() {
         assertThat(allowChanges)
             .withFailMessage(
                 "Контракт API нарушен: поле 'allowChanges' в ответе GET /settings должно иметь тип 'Boolean' " +
-                    "согласно Swagger-схеме CoreSettingsDto, сейчас вернулось значение '%s'.",
+                        "согласно Swagger-схеме CoreSettingsDto, сейчас вернулось значение '%s'.",
                 allowChanges,
             )
             .isInstanceOf(Boolean::class.javaObjectType)

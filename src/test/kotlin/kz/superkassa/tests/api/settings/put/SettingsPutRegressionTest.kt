@@ -9,7 +9,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
@@ -32,7 +32,7 @@ import java.util.stream.Stream
 @Owner("Pavel Michka")
 @DisplayName("PUT /settings: регрессионные проверки обновления настроек Superkassa")
 @Suppress("SameParameterValue", "NonAsciiCharacters")
-class SettingsPutRegressionTest : BaseTest() {
+class SettingsPutRegressionTest : BaseApiTest() {
     private lateinit var currentSettings: Map<String, Any?>
 
     @BeforeEach

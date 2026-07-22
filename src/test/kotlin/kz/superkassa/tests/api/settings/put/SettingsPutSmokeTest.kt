@@ -9,7 +9,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 @Owner("Pavel Michka")
 @DisplayName("PUT /settings: smoke-проверки обновления настроек Superkassa")
 @Suppress("SameParameterValue", "NonAsciiCharacters")
-class SettingsPutSmokeTest : BaseTest() {
+class SettingsPutSmokeTest : BaseApiTest() {
     private lateinit var currentSettings: Map<String, Any?>
 
     @BeforeEach

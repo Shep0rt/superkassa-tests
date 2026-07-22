@@ -7,7 +7,7 @@ import io.qameta.allure.SeverityLevel
 import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.http.Method
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.EnumSource
 @Story("GET /kkm/factory-info")
 @Owner("Pavel Michka")
 @DisplayName("GET /kkm/factory-info: регрессионные проверки генерации заводской информации ККМ")
-class KkmFactoryInfoRegressionTest : BaseTest() {
+class KkmFactoryInfoRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
     @Feature("API")

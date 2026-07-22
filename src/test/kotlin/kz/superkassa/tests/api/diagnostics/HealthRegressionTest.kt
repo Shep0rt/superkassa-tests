@@ -9,7 +9,7 @@ import io.restassured.http.ContentType
 import io.restassured.http.Method
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.EnumSource
 @Owner("Pavel Michka")
 @DisplayName("GET /health: регрессионные проверки состояния сервиса")
 @Suppress("SameParameterValue")
-class HealthRegressionTest : BaseTest() {
+class HealthRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
     @Feature("API")

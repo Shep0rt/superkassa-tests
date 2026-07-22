@@ -6,7 +6,7 @@ import io.qameta.allure.Severity
 import io.qameta.allure.SeverityLevel
 import io.qameta.allure.Story
 import io.restassured.http.ContentType
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 @Story("GET /kkm/factory-info")
 @Owner("Pavel Michka")
 @DisplayName("GET /kkm/factory-info: smoke-проверки генерации заводской информации ККМ")
-class KkmFactoryInfoSmokeTest : BaseTest() {
+class KkmFactoryInfoSmokeTest : BaseApiTest() {
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /kkm/factory-info без авторизации возвращает HTTP 200 и JSON")

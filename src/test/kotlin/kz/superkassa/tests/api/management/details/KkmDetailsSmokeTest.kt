@@ -7,7 +7,7 @@ import io.qameta.allure.SeverityLevel
 import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test
 @Owner("Pavel Michka")
 @DisplayName("GET /kkm/{kkmId}: smoke-проверки получения информации о ККМ")
 @Suppress("NonAsciiCharacters")
-class KkmDetailsSmokeTest : BaseTest() {
+class KkmDetailsSmokeTest : BaseApiTest() {
     private lateinit var kkmId: String
 
     @BeforeEach

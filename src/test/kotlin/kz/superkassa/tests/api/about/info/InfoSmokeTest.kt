@@ -8,7 +8,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 @Owner("Pavel Michka")
 @DisplayName("GET /info: smoke-проверки информации о Superkassa")
 @Suppress("SameParameterValue")
-class InfoSmokeTest : BaseTest() {
+class InfoSmokeTest : BaseApiTest() {
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /info возвращает HTTP 200 и JSON")

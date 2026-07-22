@@ -9,7 +9,7 @@ import io.restassured.http.ContentType
 import io.restassured.http.Method
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
@@ -28,7 +28,7 @@ import java.util.Locale
 @Owner("Pavel Michka")
 @DisplayName("GET /settings: регрессионные проверки настроек Superkassa")
 @Suppress("SameParameterValue")
-class SettingsRegressionTest : BaseTest() {
+class SettingsRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
     @Feature("API")

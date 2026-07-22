@@ -8,7 +8,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiSmoke
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 @Owner("Pavel Michka")
 @DisplayName("GET /settings: smoke-проверки настроек Superkassa")
 @Suppress("SameParameterValue")
-class SettingsSmokeTest : BaseTest() {
+class SettingsSmokeTest : BaseApiTest() {
     @Test
     @Severity(SeverityLevel.BLOCKER)
     @DisplayName("Метод GET /settings возвращает HTTP 200 и JSON")

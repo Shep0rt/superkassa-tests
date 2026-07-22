@@ -8,7 +8,7 @@ import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.http.Method
 import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseTest
+import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.contract.ApiEnumValues
 import kz.superkassa.tests.framework.reporting.reportStep
@@ -29,7 +29,7 @@ import java.util.UUID
 @Owner("Pavel Michka")
 @DisplayName("GET /kkm/{kkmId}: регрессионные проверки получения информации о ККМ")
 @Suppress("NonAsciiCharacters")
-class KkmDetailsRegressionTest : BaseTest() {
+class KkmDetailsRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
     @Feature("API")

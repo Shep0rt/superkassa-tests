@@ -1,4 +1,4 @@
-package kz.superkassa.tests.api.management.settings.branding
+package kz.superkassa.tests.api.management.settings.tax
 
 import io.qameta.allure.Allure
 import io.qameta.allure.Feature
@@ -23,16 +23,16 @@ import org.junit.jupiter.api.parallel.ResourceLock
 
 @ApiSmoke
 @Feature("API")
-@Story("PUT /kkm/{kkmId}/settings/branding")
+@Story("PUT /kkm/{kkmId}/settings/tax")
 @Owner("Pavel Michka")
-@DisplayName("PUT /kkm/{kkmId}/settings/branding: smoke-проверки настроек брендирования")
+@DisplayName("PUT /kkm/{kkmId}/settings/tax: smoke-проверки налоговых настроек ККМ")
 @ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ_WRITE)
 @Suppress("NonAsciiCharacters")
-class KkmBrandingSmokeTest : KkmAuthenticatedTest() {
+class KkmTaxSettingsSmokeTest : KkmAuthenticatedTest() {
     private var kkmToExitAfterTest: PreparedKkmAuth? = null
 
     @BeforeEach
-    fun `Готовим ККМ к обновлению настроек брендирования`() {
+    fun `Готовим ККМ к обновлению налоговых настроек`() {
         enterProgramming(preparedKkm)
     }
 
@@ -50,16 +50,16 @@ class KkmBrandingSmokeTest : KkmAuthenticatedTest() {
 
     @Test
     @Severity(SeverityLevel.BLOCKER)
-    @DisplayName("Метод PUT /kkm/{kkmId}/settings/branding возвращает HTTP 200 и JSON")
-    fun shouldUpdateBrandingSuccessfully() {
-        updateBranding()
+    @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает HTTP 200 и JSON")
+    fun shouldUpdateTaxSettingsSuccessfully() {
+        updateTaxSettings()
     }
 
     @Test
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод PUT /kkm/{kkmId}/settings/branding возвращает обязательные поля ККМ")
+    @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает обязательные поля ККМ")
     fun shouldReturnRequiredKkmFields() {
-        val response = updateBranding()
+        val response = updateTaxSettings()
 
         SoftAssertions().apply {
             KKM_REQUIRED_FIELDS.forEach { fieldName ->
@@ -94,9 +94,9 @@ class KkmBrandingSmokeTest : KkmAuthenticatedTest() {
 
     @Test
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Метод PUT /kkm/{kkmId}/settings/branding возвращает заполненные обязательные поля ККМ")
+    @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает заполненные обязательные поля ККМ")
     fun shouldReturnFilledRequiredKkmFields() {
-        val response = updateBranding()
+        val response = updateTaxSettings()
 
         SoftAssertions().apply {
             KKM_REQUIRED_FIELDS.forEach { fieldName ->
@@ -127,32 +127,28 @@ class KkmBrandingSmokeTest : KkmAuthenticatedTest() {
         }.assertAll()
     }
 
-    private fun updateBranding(): Map<String, Any?> =
-        reportStep("Обновляем настройки брендирования через PUT ${brandingPath(preparedKkm.kkmId)}") {
+    private fun updateTaxSettings(): Map<String, Any?> =
+        reportStep("Обновляем налоговые настройки через PUT ${taxSettingsPath(preparedKkm.kkmId)}") {
             superkassa.request(preparedKkm.adminPin)
-                .body(validBrandingBody())
+                .body(validTaxSettingsBody())
                 .`when`()
-                .put(brandingPath(preparedKkm.kkmId))
+                .put(taxSettingsPath(preparedKkm.kkmId))
                 .then()
-                .shouldHaveStatus(200, "обновление настроек брендирования")
+                .shouldHaveStatus(200, "обновление налоговых настроек ККМ")
                 .contentType(ContentType.JSON)
                 .extract()
                 .jsonPath()
                 .getMap("")
         }
 
-    private fun validBrandingBody(): Map<String, Any> = mapOf(
-        "language" to "MIXED",
-        "ofdTicketAds" to listOf("Superkassa"),
-        "paperWidthMm" to 80,
-        "printOfdTicketAds" to false,
-        "themeColor" to "indigo",
-        "useForceDarkTheme" to false,
+    private fun validTaxSettingsBody(): Map<String, String> = mapOf(
+        "taxRegime" to "NO_VAT",
+        "defaultVatGroup" to "NO_VAT",
     )
 
     private fun enterProgramming(preparedKkm: PreparedKkmAuth) {
         reportStep(
-            "Переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования перед обновлением брендирования",
+            "Переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования перед обновлением налоговых настроек",
         ) {
             val response: Response = superkassa.request(preparedKkm.adminPin)
                 .`when`()
@@ -166,14 +162,14 @@ class KkmBrandingSmokeTest : KkmAuthenticatedTest() {
             }
 
             response.then()
-                .shouldHaveStatus(200, "подготовка: вход ККМ в режим программирования перед обновлением брендирования")
+                .shouldHaveStatus(200, "подготовка: вход ККМ в режим программирования перед обновлением налоговых настроек")
                 .contentType(ContentType.JSON)
         }
     }
 
     private fun exitProgramming(preparedKkm: PreparedKkmAuth) {
         reportStep(
-            "Возвращаем ККМ kkmId='${preparedKkm.kkmId}' из режима программирования после проверки брендирования",
+            "Возвращаем ККМ kkmId='${preparedKkm.kkmId}' из режима программирования после проверки налоговых настроек",
         ) {
             superkassa.request(preparedKkm.adminPin)
                 .`when`()
@@ -184,7 +180,7 @@ class KkmBrandingSmokeTest : KkmAuthenticatedTest() {
         }
     }
 
-    private fun brandingPath(kkmId: String): String = "/kkm/$kkmId/settings/branding"
+    private fun taxSettingsPath(kkmId: String): String = "/kkm/$kkmId/settings/tax"
 
     private fun assertRequiredFieldPresent(
         softly: SoftAssertions,
@@ -222,7 +218,7 @@ class KkmBrandingSmokeTest : KkmAuthenticatedTest() {
         this[fieldName] as? Map<String, Any?>
 
     private companion object {
-        const val ENDPOINT = "PUT /kkm/{kkmId}/settings/branding"
+        const val ENDPOINT = "PUT /kkm/{kkmId}/settings/tax"
         const val KKM_RESPONSE_SCHEMA = "KkmResponse"
         const val OFD_SERVICE_INFO_SCHEMA = "OfdServiceInfoResponse"
         const val BRANDING_RESPONSE_SCHEMA = "ReceiptBrandingResponse"

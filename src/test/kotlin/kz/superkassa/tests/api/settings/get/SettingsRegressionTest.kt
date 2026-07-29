@@ -31,9 +31,6 @@ import java.util.Locale
 class SettingsRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /settings")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки GET /settings")
     inner class PositiveRegressionTests {
         @Test
@@ -327,16 +324,10 @@ class SettingsRegressionTest : BaseApiTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /settings")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки GET /settings")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /settings")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /settings возвращает 405")

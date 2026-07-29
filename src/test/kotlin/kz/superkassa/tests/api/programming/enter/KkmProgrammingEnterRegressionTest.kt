@@ -46,9 +46,6 @@ class KkmProgrammingEnterRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("POST /kkm/{kkmId}/programming/enter")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки POST /kkm/{kkmId}/programming/enter")
     inner class PositiveRegressionTests {
         @Test
@@ -421,16 +418,10 @@ class KkmProgrammingEnterRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("POST /kkm/{kkmId}/programming/enter")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки POST /kkm/{kkmId}/programming/enter")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/programming/enter")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки авторизации POST /kkm/{kkmId}/programming/enter")
         inner class AuthorizationRegressionTests {
             @Test
@@ -466,9 +457,6 @@ class KkmProgrammingEnterRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/programming/enter")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
@@ -490,9 +478,6 @@ class KkmProgrammingEnterRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/programming/enter")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/programming/enter возвращает 405")

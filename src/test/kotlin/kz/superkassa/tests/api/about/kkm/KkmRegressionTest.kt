@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 
 @ApiRegression
 @Feature("API")
@@ -35,9 +36,6 @@ import org.junit.jupiter.params.provider.EnumSource
 class KkmRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки GET /kkm")
     inner class PositiveRegressionTests {
         @Test
@@ -475,9 +473,6 @@ class KkmRegressionTest : BaseApiTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки фильтрации по данным существующей ККМ")
         inner class ExistingKkmFilterRegressionTests {
             private lateinit var existingKkm: Map<String, Any?>
@@ -530,51 +525,84 @@ class KkmRegressionTest : BaseApiTest() {
             }
         }
 
-        @ParameterizedTest(name = "sortBy={0}, order={1}")
-        @CsvSource(
-            "createdAt, ASC",
-            "createdAt, DESC",
-            "updatedAt, ASC",
-            "updatedAt, DESC",
-            "state, ASC",
-            "state, DESC",
-            "registrationNumber, ASC",
-            "registrationNumber, DESC",
-        )
-        @Severity(SeverityLevel.NORMAL)
-        @DisplayName("Метод GET /kkm принимает поддерживаемые параметры сортировки")
-        fun shouldAcceptSupportedSorting(sortBy: String, order: String) {
-            getKkmJson(sortBy = sortBy, order = order)
+        @Nested
+        @DisplayName("Параметры sortBy и order")
+        inner class SortingParametersTests {
+            @ParameterizedTest(name = "sortBy={0}, order={1}")
+            @CsvSource(
+                "createdAt, ASC",
+                "createdAt, DESC",
+                "updatedAt, ASC",
+                "updatedAt, DESC",
+                "state, ASC",
+                "state, DESC",
+                "registrationNumber, ASC",
+                "registrationNumber, DESC",
+            )
+            @Severity(SeverityLevel.NORMAL)
+            @DisplayName("Метод GET /kkm принимает поддерживаемые параметры сортировки")
+            fun shouldAcceptSupportedSorting(sortBy: String, order: String) {
+                getKkmJson(sortBy = sortBy, order = order)
+            }
         }
 
     }
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки GET /kkm")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки невалидных параметров запроса")
         inner class InvalidRequestParametersTests {
-            @ParameterizedTest(name = "{0}={1} возвращает 400")
-            @CsvSource(
-                "limit, abc",
-                "limit, -1",
-                "offset, abc",
-                "offset, -1",
-                "sortBy, unsupportedField",
-                "order, INVALID",
-            )
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод GET /kkm возвращает 400 для невалидных query-параметров")
-            fun shouldReturnBadRequestForInvalidQueryParams(paramName: String, paramValue: String) {
+            @Nested
+            @DisplayName("Параметр limit")
+            inner class LimitParameterTests {
+                @ParameterizedTest(name = "limit={0} возвращает 400")
+                @ValueSource(strings = ["abc", "-1"])
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод GET /kkm возвращает 400 для невалидного значения")
+                fun shouldReturnBadRequestForInvalidValue(paramValue: String) {
+                    rejectInvalidQueryParameter("limit", paramValue)
+                }
+            }
+
+            @Nested
+            @DisplayName("Параметр offset")
+            inner class OffsetParameterTests {
+                @ParameterizedTest(name = "offset={0} возвращает 400")
+                @ValueSource(strings = ["abc", "-1"])
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод GET /kkm возвращает 400 для невалидного значения")
+                fun shouldReturnBadRequestForInvalidValue(paramValue: String) {
+                    rejectInvalidQueryParameter("offset", paramValue)
+                }
+            }
+
+            @Nested
+            @DisplayName("Параметр sortBy")
+            inner class SortByParameterTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод GET /kkm возвращает 400 для неподдерживаемого поля сортировки")
+                fun shouldReturnBadRequestForUnsupportedValue() {
+                    rejectInvalidQueryParameter("sortBy", "unsupportedField")
+                }
+            }
+
+            @Nested
+            @DisplayName("Параметр order")
+            inner class OrderParameterTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод GET /kkm возвращает 400 для неподдерживаемого порядка сортировки")
+                fun shouldReturnBadRequestForUnsupportedValue() {
+                    rejectInvalidQueryParameter("order", "INVALID")
+                }
+            }
+
+            private fun rejectInvalidQueryParameter(paramName: String, paramValue: String) {
                 reportStep("Проверяем GET /kkm с невалидным query-параметром $paramName=$paramValue") {
                     superkassa.request()
                         .queryParam(paramName, paramValue)
@@ -585,14 +613,10 @@ class KkmRegressionTest : BaseApiTest() {
                         .contentType(ContentType.JSON)
                 }
             }
-
         }
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm возвращает 405")

@@ -1,4 +1,4 @@
-package kz.superkassa.tests.api.management.settings.autocloseshift
+package kz.superkassa.tests.api.management.settings.tax
 
 import io.qameta.allure.Allure
 import io.qameta.allure.Feature
@@ -32,12 +32,12 @@ import java.util.stream.Stream
 
 @ApiRegression
 @Feature("API")
-@Story("PUT /kkm/{kkmId}/settings/autocloseshift")
+@Story("PUT /kkm/{kkmId}/settings/tax")
 @Owner("Pavel Michka")
-@DisplayName("PUT /kkm/{kkmId}/settings/autocloseshift: регрессионные проверки настройки автозакрытия смены")
+@DisplayName("PUT /kkm/{kkmId}/settings/tax: регрессионные проверки налоговых настроек ККМ")
 @ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ_WRITE)
 @Suppress("NonAsciiCharacters")
-class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
+class KkmTaxSettingsRegressionTest : KkmAuthenticatedTest() {
     private var kkmToExitAfterTest: PreparedKkmAuth? = null
 
     @AfterEach
@@ -54,7 +54,7 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @DisplayName("Позитивные проверки PUT /kkm/{kkmId}/settings/autocloseshift")
+    @DisplayName("Позитивные проверки PUT /kkm/{kkmId}/settings/tax")
     inner class PositiveRegressionTests {
         @BeforeEach
         fun `Переводим ККМ в режим программирования`() {
@@ -63,9 +63,9 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает поля ожидаемых типов")
+        @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает поля ожидаемых типов")
         fun shouldReturnExpectedFieldTypes() {
-            val response = updateAutoCloseShift()
+            val response = updateTaxSettings(validTaxSettingsBody())
 
             SoftAssertions().apply {
                 REQUIRED_KKM_FIELD_TYPES.forEach { field ->
@@ -95,9 +95,9 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает допустимые enum-значения")
+        @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает допустимые enum-значения")
         fun shouldReturnSupportedEnumValues() {
-            val response = updateAutoCloseShift()
+            val response = updateTaxSettings(validTaxSettingsBody())
 
             SoftAssertions().apply {
                 assertRequiredEnumValue(this, response, "mode", "mode", KKM_RESPONSE_SCHEMA, ApiEnumValues.KKM_MODES)
@@ -136,9 +136,9 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift не возвращает поля вне Swagger-контракта")
+        @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax не возвращает поля вне Swagger-контракта")
         fun shouldNotReturnFieldsOutsideSwaggerContract() {
-            val response = updateAutoCloseShift()
+            val response = updateTaxSettings(validTaxSettingsBody())
 
             SoftAssertions().apply {
                 assertOnlySwaggerFields(this, response, KKM_RESPONSE_SCHEMA, KKM_RESPONSE_FIELDS)
@@ -157,15 +157,48 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
                 }
             }.assertAll()
         }
+
+        @Nested
+        @DisplayName("Допустимые значения полей запроса")
+        inner class ValidRequestFieldsTests {
+            @Nested
+            @DisplayName("Поле taxRegime")
+            inner class TaxRegimeFieldTests {
+                @ParameterizedTest(name = "{0}")
+                @MethodSource(
+                    "kz.superkassa.tests.api.management.settings.tax." +
+                        "KkmTaxSettingsRegressionTest#validTaxRegimeValues",
+                )
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Принимает допустимые enum-значения")
+                fun acceptsSupportedValue(caseName: String, value: String) {
+                    acceptFieldValue(caseName, TAX_REGIME_FIELD, value)
+                }
+            }
+
+            @Nested
+            @DisplayName("Поле defaultVatGroup")
+            inner class DefaultVatGroupFieldTests {
+                @ParameterizedTest(name = "{0}")
+                @MethodSource(
+                    "kz.superkassa.tests.api.management.settings.tax." +
+                        "KkmTaxSettingsRegressionTest#validDefaultVatGroupValues",
+                )
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Принимает допустимые enum-значения")
+                fun acceptsSupportedValue(caseName: String, value: String) {
+                    acceptFieldValue(caseName, DEFAULT_VAT_GROUP_FIELD, value)
+                }
+            }
+        }
     }
 
     @Nested
     @ApiRegression
-    @DisplayName("Негативные проверки PUT /kkm/{kkmId}/settings/autocloseshift")
+    @DisplayName("Негативные проверки PUT /kkm/{kkmId}/settings/tax")
     inner class NegativeRegressionTests {
         @Nested
-        @ApiRegression
-        @DisplayName("Проверки авторизации PUT /kkm/{kkmId}/settings/autocloseshift")
+        @DisplayName("Проверки авторизации PUT /kkm/{kkmId}/settings/tax")
         inner class AuthorizationRegressionTests {
             @BeforeEach
             fun `Переводим ККМ в режим программирования`() {
@@ -174,37 +207,36 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
 
             @Test
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает 401 без Authorization")
+            @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает 401 без Authorization")
             fun shouldReturnUnauthorizedWithoutAuthorization() {
-                reportStep("Проверяем PUT ${autoCloseShiftPath(preparedKkm.kkmId)} без Authorization") {
+                reportStep("Проверяем PUT ${taxSettingsPath(preparedKkm.kkmId)} без Authorization") {
                     superkassa.requestWithoutAuthorization()
-                        .body(validBody())
+                        .body(validTaxSettingsBody())
                         .`when`()
-                        .put(autoCloseShiftPath(preparedKkm.kkmId))
+                        .put(taxSettingsPath(preparedKkm.kkmId))
                         .then()
-                        .shouldHaveStatus(401, "запрос изменения autoCloseShift без Authorization")
+                        .shouldHaveStatus(401, "запрос изменения налоговых настроек без Authorization")
                         .contentType(ContentType.JSON)
                 }
             }
 
             @Test
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает 403 для неверного PIN")
+            @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает 403 для неверного PIN")
             fun shouldReturnForbiddenForInvalidPin() {
-                reportStep("Проверяем PUT ${autoCloseShiftPath(preparedKkm.kkmId)} с неверным PIN") {
+                reportStep("Проверяем PUT ${taxSettingsPath(preparedKkm.kkmId)} с неверным PIN") {
                     superkassa.request(INVALID_PIN)
-                        .body(validBody())
+                        .body(validTaxSettingsBody())
                         .`when`()
-                        .put(autoCloseShiftPath(preparedKkm.kkmId))
+                        .put(taxSettingsPath(preparedKkm.kkmId))
                         .then()
-                        .shouldHaveStatus(403, "запрос изменения autoCloseShift с неверным PIN")
+                        .shouldHaveStatus(403, "запрос изменения налоговых настроек с неверным PIN")
                         .contentType(ContentType.JSON)
                 }
             }
         }
 
         @Nested
-        @ApiRegression
         @DisplayName("Проверки невалидного тела запроса")
         inner class InvalidRequestBodyTests {
             @BeforeEach
@@ -212,92 +244,95 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
                 enterProgramming(preparedKkm)
             }
 
-            @Test
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает 400 без тела запроса")
-            fun shouldReturnBadRequestWithoutRequestBody() {
-                reportStep("Отправляем PUT ${autoCloseShiftPath(preparedKkm.kkmId)} без тела запроса") {
-                    superkassa.request(preparedKkm.adminPin)
-                        .`when`()
-                        .put(autoCloseShiftPath(preparedKkm.kkmId))
-                        .then()
-                        .shouldHaveStatus(400, "запрос изменения autoCloseShift без тела запроса")
-                        .contentType(ContentType.JSON)
+            @Nested
+            @DisplayName("Общая структура тела запроса")
+            inner class RequestBodyStructureTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает 400 без тела запроса")
+                fun shouldReturnBadRequestWithoutRequestBody() {
+                    reportStep("Отправляем PUT ${taxSettingsPath(preparedKkm.kkmId)} без тела запроса") {
+                        superkassa.request(preparedKkm.adminPin)
+                            .`when`()
+                            .put(taxSettingsPath(preparedKkm.kkmId))
+                            .then()
+                            .shouldHaveStatus(400, "запрос изменения налоговых настроек без тела запроса")
+                            .contentType(ContentType.JSON)
+                    }
+                }
+
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает 400 для пустого объекта")
+                fun shouldReturnBadRequestForEmptyObject() {
+                    putInvalidBody(emptyMap<String, Any?>(), "тело запроса не содержит обязательных полей")
                 }
             }
 
-            @Test
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает 400 без обязательного поля autoCloseShift")
-            fun shouldReturnBadRequestWithoutRequiredAutoCloseShift() {
-                putInvalidBody(
-                    body = emptyMap<String, Any?>(),
-                    scenario = "обязательное поле autoCloseShift отсутствует",
+            @Nested
+            @DisplayName("Поле taxRegime")
+            inner class TaxRegimeFieldTests {
+                @ParameterizedTest(name = "{0}")
+                @MethodSource(
+                    "kz.superkassa.tests.api.management.settings.tax." +
+                        "KkmTaxSettingsRegressionTest#invalidTaxRegimeValues",
                 )
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для невалидного значения")
+                fun rejectsInvalidValue(caseName: String, value: Any?) {
+                    rejectFieldValue(caseName, TAX_REGIME_FIELD, value)
+                }
             }
 
-            @Test
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает 400 для autoCloseShift=null")
-            fun shouldReturnBadRequestForNullAutoCloseShift() {
-                putInvalidBody(
-                    body = mapOf(AUTO_CLOSE_SHIFT_FIELD to null),
-                    scenario = "поле autoCloseShift содержит null",
+            @Nested
+            @DisplayName("Поле defaultVatGroup")
+            inner class DefaultVatGroupFieldTests {
+                @ParameterizedTest(name = "{0}")
+                @MethodSource(
+                    "kz.superkassa.tests.api.management.settings.tax." +
+                        "KkmTaxSettingsRegressionTest#invalidDefaultVatGroupValues",
                 )
-            }
-
-            @ParameterizedTest(name = "{0}")
-            @MethodSource(
-                "kz.superkassa.tests.api.management.settings.autocloseshift." +
-                    "KkmAutoCloseShiftRegressionTest#invalidAutoCloseShiftTypes",
-            )
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает 400 для autoCloseShift неправильного типа")
-            fun shouldReturnBadRequestForInvalidAutoCloseShiftType(caseName: String, invalidValue: Any) {
-                putInvalidBody(
-                    body = mapOf(AUTO_CLOSE_SHIFT_FIELD to invalidValue),
-                    scenario = caseName,
-                )
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для невалидного значения")
+                fun rejectsInvalidValue(caseName: String, value: Any?) {
+                    rejectFieldValue(caseName, DEFAULT_VAT_GROUP_FIELD, value)
+                }
             }
         }
 
         @Nested
-        @ApiRegression
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/settings/autocloseshift возвращает 404 для несуществующей ККМ")
+            @DisplayName("Метод PUT /kkm/{kkmId}/settings/tax возвращает 404 для несуществующей ККМ")
             fun shouldReturnNotFoundForUnknownKkmId() {
                 val unknownKkmId = UUID.randomUUID().toString()
 
-                reportStep("Проверяем PUT ${autoCloseShiftPath(unknownKkmId)} для несуществующей ККМ") {
+                reportStep("Проверяем PUT ${taxSettingsPath(unknownKkmId)} для несуществующей ККМ") {
                     superkassa.request(preparedKkm.adminPin)
-                        .body(validBody())
+                        .body(validTaxSettingsBody())
                         .`when`()
-                        .put(autoCloseShiftPath(unknownKkmId))
+                        .put(taxSettingsPath(unknownKkmId))
                         .then()
-                        .shouldHaveStatus(404, "изменение autoCloseShift для несуществующей ККМ")
+                        .shouldHaveStatus(404, "изменение налоговых настроек для несуществующей ККМ")
                         .contentType(ContentType.JSON)
                 }
             }
         }
 
         @Nested
-        @ApiRegression
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
-            @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/settings/autocloseshift возвращает 405")
+            @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/settings/tax возвращает 405")
             @EnumSource(value = Method::class, names = ["GET", "POST", "PATCH", "DELETE"])
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод /kkm/{kkmId}/settings/autocloseshift возвращает 405 для HTTP-методов кроме PUT")
+            @DisplayName("Метод /kkm/{kkmId}/settings/tax возвращает 405 для HTTP-методов кроме PUT")
             fun shouldReturnMethodNotAllowedForNonPutMethods(method: Method) {
-                reportStep(
-                    "Проверяем, что HTTP $method ${autoCloseShiftPath(preparedKkm.kkmId)} не поддерживается",
-                ) {
+                reportStep("Проверяем, что HTTP $method ${taxSettingsPath(preparedKkm.kkmId)} не поддерживается") {
                     superkassa.request(preparedKkm.adminPin)
                         .`when`()
-                        .request(method, autoCloseShiftPath(preparedKkm.kkmId))
+                        .request(method, taxSettingsPath(preparedKkm.kkmId))
                         .then()
                         .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
                 }
@@ -305,14 +340,14 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
         }
     }
 
-    private fun updateAutoCloseShift(): Map<String, Any?> =
-        reportStep("Устанавливаем autoCloseShift=false через PUT ${autoCloseShiftPath(preparedKkm.kkmId)}") {
+    private fun updateTaxSettings(body: Map<String, Any?>): Map<String, Any?> =
+        reportStep("Обновляем налоговые настройки через PUT ${taxSettingsPath(preparedKkm.kkmId)}") {
             superkassa.request(preparedKkm.adminPin)
-                .body(validBody())
+                .body(body)
                 .`when`()
-                .put(autoCloseShiftPath(preparedKkm.kkmId))
+                .put(taxSettingsPath(preparedKkm.kkmId))
                 .then()
-                .shouldHaveStatus(200, "установка autoCloseShift=false")
+                .shouldHaveStatus(200, "обновление налоговых настроек ККМ")
                 .contentType(ContentType.JSON)
                 .extract()
                 .jsonPath()
@@ -320,22 +355,40 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
         }
 
     private fun putInvalidBody(body: Any, scenario: String) {
-        reportStep("Отправляем невалидное тело PUT ${autoCloseShiftPath(preparedKkm.kkmId)}: $scenario") {
+        reportStep("Отправляем невалидное тело PUT ${taxSettingsPath(preparedKkm.kkmId)}: $scenario") {
             superkassa.request(preparedKkm.adminPin)
                 .body(body)
                 .`when`()
-                .put(autoCloseShiftPath(preparedKkm.kkmId))
+                .put(taxSettingsPath(preparedKkm.kkmId))
                 .then()
                 .shouldHaveStatus(400, scenario)
                 .contentType(ContentType.JSON)
         }
     }
 
-    private fun validBody(): Map<String, Boolean> = mapOf(AUTO_CLOSE_SHIFT_FIELD to false)
+    private fun acceptFieldValue(caseName: String, fieldName: String, value: String) {
+        reportStep("Проверяем допустимое значение поля $fieldName: $caseName") {
+            updateTaxSettings(validTaxSettingsBody() + (fieldName to value))
+        }
+    }
+
+    private fun rejectFieldValue(caseName: String, fieldName: String, value: Any?) {
+        val body = if (value === OmittedFieldValue) {
+            validTaxSettingsBody() - fieldName
+        } else {
+            validTaxSettingsBody() + (fieldName to value)
+        }
+        putInvalidBody(body, caseName)
+    }
+
+    private fun validTaxSettingsBody(): Map<String, Any?> = mapOf(
+        TAX_REGIME_FIELD to "NO_VAT",
+        DEFAULT_VAT_GROUP_FIELD to "NO_VAT",
+    )
 
     private fun enterProgramming(preparedKkm: PreparedKkmAuth) {
         reportStep(
-            "Переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования перед обновлением autoCloseShift",
+            "Переводим ККМ kkmId='${preparedKkm.kkmId}' в режим программирования перед обновлением налоговых настроек",
         ) {
             val response: Response = superkassa.request(preparedKkm.adminPin)
                 .`when`()
@@ -349,14 +402,14 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
             }
 
             response.then()
-                .shouldHaveStatus(200, "подготовка: вход ККМ в режим программирования перед обновлением autoCloseShift")
+                .shouldHaveStatus(200, "подготовка: вход ККМ в режим программирования перед обновлением налоговых настроек")
                 .contentType(ContentType.JSON)
         }
     }
 
     private fun exitProgramming(preparedKkm: PreparedKkmAuth) {
         reportStep(
-            "Возвращаем ККМ kkmId='${preparedKkm.kkmId}' из режима программирования после проверки autoCloseShift",
+            "Возвращаем ККМ kkmId='${preparedKkm.kkmId}' из режима программирования после проверки налоговых настроек",
         ) {
             superkassa.request(preparedKkm.adminPin)
                 .`when`()
@@ -473,9 +526,7 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
         val enumValue = value as? String
 
         softly.assertThat(enumValue)
-            .withFailMessage(
-                ApiContractErrorMessages.enumUnsupported(ENDPOINT, fieldPath, enumValue, supportedValues),
-            )
+            .withFailMessage(ApiContractErrorMessages.enumUnsupported(ENDPOINT, fieldPath, enumValue, supportedValues))
             .isIn(supportedValues)
     }
 
@@ -483,7 +534,7 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
     private fun Map<String, Any?>.objectField(fieldName: String): Map<String, Any?>? =
         this[fieldName] as? Map<String, Any?>
 
-    private fun autoCloseShiftPath(kkmId: String): String = "/kkm/$kkmId/settings/autocloseshift"
+    private fun taxSettingsPath(kkmId: String): String = "/kkm/$kkmId/settings/tax"
 
     private data class FieldType(
         val name: String,
@@ -492,10 +543,13 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
         val schema: String,
     )
 
+    private object OmittedFieldValue
+
     @Suppress("unused")
     private companion object {
-        const val ENDPOINT = "PUT /kkm/{kkmId}/settings/autocloseshift"
-        const val AUTO_CLOSE_SHIFT_FIELD = "autoCloseShift"
+        const val ENDPOINT = "PUT /kkm/{kkmId}/settings/tax"
+        const val TAX_REGIME_FIELD = "taxRegime"
+        const val DEFAULT_VAT_GROUP_FIELD = "defaultVatGroup"
         const val KKM_RESPONSE_SCHEMA = "KkmResponse"
         const val OFD_SERVICE_INFO_SCHEMA = "OfdServiceInfoResponse"
         const val BRANDING_RESPONSE_SCHEMA = "ReceiptBrandingResponse"
@@ -634,11 +688,50 @@ class KkmAutoCloseShiftRegressionTest : KkmAuthenticatedTest() {
         )
 
         @JvmStatic
-        fun invalidAutoCloseShiftTypes(): Stream<Arguments> = Stream.of(
-            Arguments.of("поле autoCloseShift имеет тип String вместо Boolean", "false"),
-            Arguments.of("поле autoCloseShift имеет тип Number вместо Boolean", 0),
-            Arguments.of("поле autoCloseShift имеет тип Object вместо Boolean", mapOf("value" to false)),
-            Arguments.of("поле autoCloseShift имеет тип Array вместо Boolean", listOf(false)),
+        fun validTaxRegimeValues(): Stream<Arguments> = Stream.of(
+            Arguments.of("taxRegime принимает NO_VAT", "NO_VAT"),
+            Arguments.of("taxRegime принимает VAT_PAYER", "VAT_PAYER"),
+            Arguments.of("taxRegime принимает MIXED", "MIXED"),
+        )
+
+        @JvmStatic
+        fun validDefaultVatGroupValues(): Stream<Arguments> = Stream.of(
+            Arguments.of("defaultVatGroup принимает NO_VAT", "NO_VAT"),
+            Arguments.of("defaultVatGroup принимает VAT_0", "VAT_0"),
+            Arguments.of("defaultVatGroup принимает VAT_16", "VAT_16"),
+        )
+
+        @JvmStatic
+        fun invalidTaxRegimeValues(): Stream<Arguments> = invalidEnumFieldValues(
+            fieldName = TAX_REGIME_FIELD,
+            unsupportedValue = "STANDARD",
+            wrongCaseValue = "no_vat",
+        )
+
+        @JvmStatic
+        fun invalidDefaultVatGroupValues(): Stream<Arguments> = invalidEnumFieldValues(
+            fieldName = DEFAULT_VAT_GROUP_FIELD,
+            unsupportedValue = "VAT_10",
+            wrongCaseValue = "vat_16",
+        )
+
+        private fun invalidEnumFieldValues(
+            fieldName: String,
+            unsupportedValue: String,
+            wrongCaseValue: String,
+        ): Stream<Arguments> = Stream.of(
+            Arguments.of("обязательное поле $fieldName отсутствует", OmittedFieldValue),
+            Arguments.of("обязательное поле $fieldName содержит null", null),
+            Arguments.of("поле $fieldName содержит пустую строку", ""),
+            Arguments.of("поле $fieldName состоит только из пробелов", "   "),
+            Arguments.of("поле $fieldName содержит неподдерживаемое значение $unsupportedValue", unsupportedValue),
+            Arguments.of("поле $fieldName содержит значение в неправильном регистре $wrongCaseValue", wrongCaseValue),
+            Arguments.of("поле $fieldName содержит пробел в начале", " NO_VAT"),
+            Arguments.of("поле $fieldName содержит пробел в конце", "NO_VAT "),
+            Arguments.of("поле $fieldName имеет тип Number вместо String", 123),
+            Arguments.of("поле $fieldName имеет тип Boolean вместо String", true),
+            Arguments.of("поле $fieldName имеет тип Object вместо String", mapOf("value" to "NO_VAT")),
+            Arguments.of("поле $fieldName имеет тип Array вместо String", listOf("NO_VAT")),
         )
     }
 }

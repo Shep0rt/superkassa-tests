@@ -47,9 +47,6 @@ class KkmProgrammingExitRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("POST /kkm/{kkmId}/programming/exit")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки POST /kkm/{kkmId}/programming/exit")
     inner class PositiveRegressionTests {
         @BeforeEach
@@ -413,16 +410,10 @@ class KkmProgrammingExitRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("POST /kkm/{kkmId}/programming/exit")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки POST /kkm/{kkmId}/programming/exit")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/programming/exit")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки авторизации POST /kkm/{kkmId}/programming/exit")
         inner class AuthorizationRegressionTests {
             @BeforeEach
@@ -463,9 +454,6 @@ class KkmProgrammingExitRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/programming/exit")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
@@ -487,9 +475,6 @@ class KkmProgrammingExitRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/programming/exit")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @BeforeEach

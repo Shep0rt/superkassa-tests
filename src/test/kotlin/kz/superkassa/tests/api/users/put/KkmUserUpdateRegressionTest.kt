@@ -54,9 +54,6 @@ class KkmUserUpdateRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("PUT /kkm/{kkmId}/users/{userId}")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки PUT /kkm/{kkmId}/users/{userId}")
     @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
     inner class PositiveRegressionTests {
@@ -111,17 +108,11 @@ class KkmUserUpdateRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("PUT /kkm/{kkmId}/users/{userId}")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки PUT /kkm/{kkmId}/users/{userId}")
     @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/users/{userId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки невалидного тела запроса")
         @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
         inner class InvalidRequestBodyTests {
@@ -130,40 +121,102 @@ class KkmUserUpdateRegressionTest : KkmAuthenticatedTest() {
                 createdUser = prepareUserForUpdate()
             }
 
-            @ParameterizedTest(name = "{0}")
-            @MethodSource("kz.superkassa.tests.api.users.put.KkmUserUpdateRegressionTest#nullOnlyRequestFields")
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400, если единственное поле содержит null")
-            fun shouldReturnBadRequestForNullOnlyRequestField(caseName: String, fieldName: String) {
-                putUserExpectingRejection(
-                    createdUser = createdUser,
-                    body = mapOf(fieldName to null),
-                    stepName = "Отправляем невалидное тело PUT ${userPath(createdUser)}: $caseName",
-                    expectedStatus = 400,
-                    scenario = caseName,
-                )
+            @Nested
+            @DisplayName("Общая структура тела запроса")
+            inner class RequestBodyStructureTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 для пустого объекта UserUpdateRequest")
+                fun shouldReturnBadRequestForEmptyUpdateObject() {
+                    val scenario = "в UserUpdateRequest не передано ни одного поля для изменения"
+
+                    putUserExpectingRejection(
+                        createdUser = createdUser,
+                        body = emptyMap(),
+                        stepName = "Отправляем пустой объект PUT ${userPath(createdUser)}: $scenario",
+                        expectedStatus = 400,
+                        scenario = scenario,
+                    )
+                }
+
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 без тела запроса")
+                fun shouldReturnBadRequestWithoutRequestBody() {
+                    reportStep("Отправляем PUT ${userPath(createdUser)} без тела запроса") {
+                        superkassa.request(createdUser.preparedKkm.adminPin)
+                            .`when`()
+                            .put(userPath(createdUser))
+                            .then()
+                            .shouldHaveStatus(400, "обязательное тело запроса отсутствует")
+                            .contentType(ContentType.JSON)
+                    }
+                }
             }
 
-            @Test
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 для пустого объекта UserUpdateRequest")
-            fun shouldReturnBadRequestForEmptyUpdateObject() {
-                val scenario = "в UserUpdateRequest не передано ни одного поля для изменения"
+            @Nested
+            @DisplayName("Поле name")
+            inner class NameFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400, если единственное поле содержит null")
+                fun shouldReturnBadRequestForNullValue() =
+                    rejectFieldValue("поле name содержит null, других изменений нет", "name", null)
 
-                putUserExpectingRejection(
-                    createdUser = createdUser,
-                    body = emptyMap(),
-                    stepName = "Отправляем пустой объект PUT ${userPath(createdUser)}: $scenario",
-                    expectedStatus = 400,
-                    scenario = scenario,
-                )
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для неверного типа")
+                fun shouldReturnBadRequestForInvalidType() =
+                    rejectFieldValue("поле name имеет тип Number вместо String", "name", 123)
             }
 
-            @ParameterizedTest(name = "{0}")
-            @MethodSource("kz.superkassa.tests.api.users.put.KkmUserUpdateRegressionTest#invalidFieldTypes")
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 для неверного типа поля запроса")
-            fun shouldReturnBadRequestForInvalidFieldType(caseName: String, fieldName: String, invalidValue: Any) {
+            @Nested
+            @DisplayName("Поле role")
+            inner class RoleFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400, если единственное поле содержит null")
+                fun shouldReturnBadRequestForNullValue() =
+                    rejectFieldValue("поле role содержит null, других изменений нет", "role", null)
+
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для неверного типа")
+                fun shouldReturnBadRequestForInvalidType() =
+                    rejectFieldValue("поле role имеет тип Boolean вместо String", "role", true)
+
+                @ParameterizedTest(name = "{0}")
+                @MethodSource("kz.superkassa.tests.api.users.put.KkmUserUpdateRegressionTest#invalidUserRoles")
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для невалидного значения")
+                fun shouldReturnBadRequestForInvalidValue(caseName: String, invalidRole: String) =
+                    rejectFieldValue(caseName, "role", invalidRole)
+            }
+
+            @Nested
+            @DisplayName("Поле userPin")
+            inner class UserPinFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400, если единственное поле содержит null")
+                fun shouldReturnBadRequestForNullValue() =
+                    rejectFieldValue("поле userPin содержит null, других изменений нет", "userPin", null)
+
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для неверного типа")
+                fun shouldReturnBadRequestForInvalidType() =
+                    rejectFieldValue("поле userPin имеет тип Number вместо String", "userPin", 1234)
+
+                @ParameterizedTest(name = "{0}")
+                @MethodSource("kz.superkassa.tests.api.users.put.KkmUserUpdateRegressionTest#invalidUserPins")
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для невалидного значения")
+                fun shouldReturnBadRequestForInvalidValue(caseName: String, invalidPin: String) =
+                    rejectFieldValue(caseName, "userPin", invalidPin)
+            }
+
+            private fun rejectFieldValue(caseName: String, fieldName: String, invalidValue: Any?) {
                 putUserExpectingRejection(
                     createdUser = createdUser,
                     body = mapOf(fieldName to invalidValue),
@@ -173,55 +226,10 @@ class KkmUserUpdateRegressionTest : KkmAuthenticatedTest() {
                 )
             }
 
-            @ParameterizedTest(name = "{0}")
-            @MethodSource("kz.superkassa.tests.api.users.put.KkmUserUpdateRegressionTest#invalidUserRoles")
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 для невалидной роли")
-            fun shouldReturnBadRequestForInvalidRole(caseName: String, invalidRole: String) {
-                putUserExpectingRejection(
-                    createdUser = createdUser,
-                    body = mapOf("role" to invalidRole),
-                    stepName = "Отправляем невалидное тело PUT ${userPath(createdUser)}: $caseName",
-                    expectedStatus = 400,
-                    scenario = caseName,
-                )
-            }
-
-            @ParameterizedTest(name = "{0}")
-            @MethodSource("kz.superkassa.tests.api.users.put.KkmUserUpdateRegressionTest#invalidUserPins")
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 для невалидного PIN пользователя")
-            fun shouldReturnBadRequestForInvalidUserPin(caseName: String, invalidPin: String) {
-                putUserExpectingRejection(
-                    createdUser = createdUser,
-                    body = mapOf("userPin" to invalidPin),
-                    stepName = "Отправляем невалидное тело PUT ${userPath(createdUser)}: $caseName",
-                    expectedStatus = 400,
-                    scenario = caseName,
-                )
-            }
-
-            @Test
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /kkm/{kkmId}/users/{userId} возвращает 400 без тела запроса")
-            fun shouldReturnBadRequestWithoutRequestBody() {
-                reportStep("Отправляем PUT ${userPath(createdUser)} без тела запроса") {
-                    superkassa.request(createdUser.preparedKkm.adminPin)
-                        .`when`()
-                        .put(userPath(createdUser))
-                        .then()
-                        .shouldHaveStatus(400, "обязательное тело запроса отсутствует")
-                        .contentType(ContentType.JSON)
-                }
-            }
-
         }
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/users/{userId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки авторизации PUT /kkm/{kkmId}/users/{userId}")
         @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
         inner class AuthorizationRegressionTests {
@@ -263,9 +271,6 @@ class KkmUserUpdateRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/users/{userId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
         inner class MissingIdentifiersTests {
@@ -305,9 +310,6 @@ class KkmUserUpdateRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/users/{userId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
         inner class UnsupportedHttpMethodsTests {
@@ -570,20 +572,6 @@ class KkmUserUpdateRegressionTest : KkmAuthenticatedTest() {
             "pin",
             "role",
             "userId",
-        )
-
-        @JvmStatic
-        fun nullOnlyRequestFields(): Stream<Arguments> = Stream.of(
-            Arguments.of("поле name содержит null, других изменений нет", "name"),
-            Arguments.of("поле role содержит null, других изменений нет", "role"),
-            Arguments.of("поле userPin содержит null, других изменений нет", "userPin"),
-        )
-
-        @JvmStatic
-        fun invalidFieldTypes(): Stream<Arguments> = Stream.of(
-            Arguments.of("поле name имеет тип Number вместо String", "name", 123),
-            Arguments.of("поле role имеет тип Boolean вместо String", "role", true),
-            Arguments.of("поле userPin имеет тип Number вместо String", "userPin", 1234),
         )
 
         @JvmStatic

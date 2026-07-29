@@ -37,9 +37,6 @@ import java.util.concurrent.ThreadLocalRandom
 class KkmUserDeleteRegressionTest : KkmAuthenticatedTest() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("DELETE /kkm/{kkmId}/users/{userId}")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки DELETE /kkm/{kkmId}/users/{userId}")
     @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
     inner class PositiveRegressionTests {
@@ -122,17 +119,11 @@ class KkmUserDeleteRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("DELETE /kkm/{kkmId}/users/{userId}")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки DELETE /kkm/{kkmId}/users/{userId}")
     @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("DELETE /kkm/{kkmId}/users/{userId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки авторизации DELETE /kkm/{kkmId}/users/{userId}")
         @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ_WRITE)
         inner class AuthorizationRegressionTests {
@@ -180,9 +171,6 @@ class KkmUserDeleteRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("DELETE /kkm/{kkmId}/users/{userId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
@@ -221,9 +209,6 @@ class KkmUserDeleteRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("DELETE /kkm/{kkmId}/users/{userId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/users/'{'userId'}' возвращает 405")

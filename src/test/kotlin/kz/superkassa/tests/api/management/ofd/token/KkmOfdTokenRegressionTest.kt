@@ -34,9 +34,6 @@ import java.util.stream.Stream
 class KkmOfdTokenRegressionTest : KkmOfdTokenTestBase() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("PUT /kkm/{kkmId}/ofd/token")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки PUT /kkm/{kkmId}/ofd/token")
     inner class PositiveRegressionTests {
         @BeforeEach
@@ -117,16 +114,10 @@ class KkmOfdTokenRegressionTest : KkmOfdTokenTestBase() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("PUT /kkm/{kkmId}/ofd/token")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки PUT /kkm/{kkmId}/ofd/token")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/ofd/token")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки авторизации PUT /kkm/{kkmId}/ofd/token")
         inner class AuthorizationRegressionTests {
             @BeforeEach
@@ -167,9 +158,6 @@ class KkmOfdTokenRegressionTest : KkmOfdTokenTestBase() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/ofd/token")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки невалидного тела запроса")
         inner class InvalidRequestBodyTests {
             @BeforeEach
@@ -247,9 +235,6 @@ class KkmOfdTokenRegressionTest : KkmOfdTokenTestBase() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/ofd/token")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
@@ -270,9 +255,6 @@ class KkmOfdTokenRegressionTest : KkmOfdTokenTestBase() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /kkm/{kkmId}/ofd/token")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/ofd/token возвращает 405")

@@ -50,9 +50,6 @@ class KkmOfdSyncRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("POST /kkm/{kkmId}/ofd/sync")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки POST /kkm/{kkmId}/ofd/sync")
     @ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ_WRITE)
     inner class PositiveRegressionTests {
@@ -130,17 +127,11 @@ class KkmOfdSyncRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("POST /kkm/{kkmId}/ofd/sync")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки POST /kkm/{kkmId}/ofd/sync")
     @ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ_WRITE)
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/ofd/sync")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки авторизации POST /kkm/{kkmId}/ofd/sync")
         @ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ_WRITE)
         inner class AuthorizationRegressionTests {
@@ -177,9 +168,6 @@ class KkmOfdSyncRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/ofd/sync")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
@@ -201,9 +189,6 @@ class KkmOfdSyncRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("POST /kkm/{kkmId}/ofd/sync")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/ofd/sync возвращает 405")

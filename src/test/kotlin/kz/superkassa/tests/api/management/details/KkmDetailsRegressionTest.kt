@@ -32,9 +32,6 @@ import java.util.UUID
 class KkmDetailsRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm/{kkmId}")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки GET /kkm/{kkmId}")
     inner class PositiveRegressionTests {
         private lateinit var kkmId: String
@@ -388,16 +385,10 @@ class KkmDetailsRegressionTest : BaseApiTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm/{kkmId}")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки GET /kkm/{kkmId}")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm/{kkmId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
@@ -420,9 +411,6 @@ class KkmDetailsRegressionTest : BaseApiTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm/{kkmId}")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}' возвращает 405")

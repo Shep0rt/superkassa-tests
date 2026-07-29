@@ -26,9 +26,6 @@ import org.junit.jupiter.params.provider.EnumSource
 class KkmFactoryInfoRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm/factory-info")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки GET /kkm/factory-info")
     inner class PositiveRegressionTests {
         @Test
@@ -67,16 +64,10 @@ class KkmFactoryInfoRegressionTest : BaseApiTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm/factory-info")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки GET /kkm/factory-info")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm/factory-info")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm/factory-info возвращает 405")

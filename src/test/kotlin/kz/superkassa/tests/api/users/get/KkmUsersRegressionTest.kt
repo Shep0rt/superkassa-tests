@@ -34,9 +34,6 @@ import org.junit.jupiter.params.provider.EnumSource
 class KkmUsersRegressionTest : KkmAuthenticatedTest() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm/{kkmId}/users")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки GET /kkm/{kkmId}/users")
     inner class PositiveRegressionTests {
         @Test
@@ -92,16 +89,10 @@ class KkmUsersRegressionTest : KkmAuthenticatedTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /kkm/{kkmId}/users")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки GET /kkm/{kkmId}/users")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm/{kkmId}/users")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки авторизации GET /kkm/{kkmId}/users")
         @ResourceLock(value = "kkm-users", mode = ResourceAccessMode.READ)
         inner class AuthorizationRegressionTests {
@@ -138,9 +129,6 @@ class KkmUsersRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm/{kkmId}/users")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
@@ -162,9 +150,6 @@ class KkmUsersRegressionTest : KkmAuthenticatedTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /kkm/{kkmId}/users")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/users возвращает 405")

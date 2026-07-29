@@ -30,9 +30,6 @@ import org.junit.jupiter.params.provider.EnumSource
 class HealthRegressionTest : BaseApiTest() {
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /health")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки GET /health")
     inner class PositiveRegressionTests {
         @Test
@@ -136,16 +133,10 @@ class HealthRegressionTest : BaseApiTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("GET /health")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки GET /health")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /health")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки невалидных параметров запроса")
         inner class InvalidRequestParametersTests {
             @Test
@@ -167,9 +158,6 @@ class HealthRegressionTest : BaseApiTest() {
 
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("GET /health")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
             @ParameterizedTest(name = "HTTP {0} /health возвращает 405")

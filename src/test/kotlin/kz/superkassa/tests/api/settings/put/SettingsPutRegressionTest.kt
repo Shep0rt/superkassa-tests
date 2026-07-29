@@ -21,10 +21,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
 import java.util.Locale
-import java.util.stream.Stream
 
 @ApiRegression
 @Feature("API")
@@ -43,9 +40,6 @@ class SettingsPutRegressionTest : BaseApiTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("PUT /settings")
-    @Owner("Pavel Michka")
     @DisplayName("Позитивные проверки PUT /settings")
     inner class PositiveRegressionTests {
         @Test
@@ -336,45 +330,97 @@ class SettingsPutRegressionTest : BaseApiTest() {
 
     @Nested
     @ApiRegression
-    @Feature("API")
-    @Story("PUT /settings")
-    @Owner("Pavel Michka")
     @DisplayName("Негативные проверки PUT /settings")
     inner class NegativeRegressionTests {
         @Nested
         @ApiRegression
-        @Feature("API")
-        @Story("PUT /settings")
-        @Owner("Pavel Michka")
         @DisplayName("Проверки невалидного тела запроса")
         inner class InvalidRequestBodyTests {
-            @ParameterizedTest(name = "{0}")
-            @MethodSource("kz.superkassa.tests.api.settings.put.SettingsPutRegressionTest#invalidSettingsBodies")
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /settings возвращает 400 для невалидного тела запроса")
-            fun shouldReturnBadRequestForInvalidBody(caseName: String, bodyOverride: Map<String, Any?>) {
-                val invalidBody = currentSettings.toMutableMap().apply {
-                    putAll(bodyOverride)
+            @Nested
+            @DisplayName("Общая структура тела запроса")
+            inner class RequestBodyStructureTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Метод PUT /settings возвращает 400 для пустого тела запроса")
+                fun shouldReturnBadRequestForEmptyBody() {
+                    reportStep("Отправляем пустое тело через PUT /settings") {
+                        superkassa.request()
+                            .body(emptyMap<String, Any?>())
+                            .`when`()
+                            .put("/settings")
+                            .then()
+                            .shouldHaveStatus(400, "невалидный запрос")
+                            .contentType(ContentType.JSON)
+                    }
                 }
+            }
+
+            @Nested
+            @DisplayName("Поле mode")
+            inner class ModeFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для неподдерживаемого значения")
+                fun shouldReturnBadRequestForUnsupportedValue() = rejectInvalidSettingsBody(
+                    caseName = "mode содержит неподдерживаемое значение",
+                    bodyOverride = mapOf("mode" to "UNKNOWN"),
+                )
+            }
+
+            @Nested
+            @DisplayName("Поле storage")
+            inner class StorageFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400, если поле отсутствует")
+                fun shouldReturnBadRequestWhenMissing() = rejectInvalidSettingsBody(
+                    caseName = "storage отсутствует",
+                    bodyOverride = mapOf("storage" to null),
+                )
+            }
+
+            @Nested
+            @DisplayName("Поле storage.engine")
+            inner class StorageEngineFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400, если поле отсутствует")
+                fun shouldReturnBadRequestWhenMissing() = rejectInvalidSettingsBody(
+                    caseName = "storage.engine отсутствует",
+                    bodyOverride = mapOf("storage" to mapOf("jdbcUrl" to "jdbc:sqlite:data/core.db")),
+                )
+            }
+
+            @Nested
+            @DisplayName("Поле ofdTimeoutSeconds")
+            inner class OfdTimeoutSecondsFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для значения меньше минимально допустимого")
+                fun shouldReturnBadRequestBelowMinimum() = rejectInvalidSettingsBody(
+                    caseName = "ofdTimeoutSeconds меньше минимально допустимого значения",
+                    bodyOverride = mapOf("ofdTimeoutSeconds" to 1),
+                )
+            }
+
+            @Nested
+            @DisplayName("Поле ofdReconnectIntervalSeconds")
+            inner class OfdReconnectIntervalSecondsFieldTests {
+                @Test
+                @Severity(SeverityLevel.NORMAL)
+                @DisplayName("Возвращает 400 для значения меньше минимально допустимого")
+                fun shouldReturnBadRequestBelowMinimum() = rejectInvalidSettingsBody(
+                    caseName = "ofdReconnectIntervalSeconds меньше минимально допустимого значения",
+                    bodyOverride = mapOf("ofdReconnectIntervalSeconds" to 1),
+                )
+            }
+
+            private fun rejectInvalidSettingsBody(caseName: String, bodyOverride: Map<String, Any?>) {
+                val invalidBody = currentSettings.toMutableMap().apply { putAll(bodyOverride) }
 
                 reportStep("Отправляем невалидное тело через PUT /settings: $caseName") {
                     superkassa.request()
                         .body(invalidBody)
-                        .`when`()
-                        .put("/settings")
-                        .then()
-                        .shouldHaveStatus(400, "невалидный запрос")
-                        .contentType(ContentType.JSON)
-                }
-            }
-
-            @Test
-            @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод PUT /settings возвращает 400 для пустого тела запроса")
-            fun shouldReturnBadRequestForEmptyBody() {
-                reportStep("Отправляем пустое тело через PUT /settings") {
-                    superkassa.request()
-                        .body(emptyMap<String, Any?>())
                         .`when`()
                         .put("/settings")
                         .then()
@@ -641,18 +687,6 @@ class SettingsPutRegressionTest : BaseApiTest() {
 
     private companion object {
         const val ENDPOINT = "PUT /settings"
-
-        @JvmStatic
-        fun invalidSettingsBodies(): Stream<Array<Any>> = Stream.of(
-            arrayOf("mode содержит неподдерживаемое значение", mapOf("mode" to "UNKNOWN")),
-            arrayOf("storage отсутствует", mapOf("storage" to null)),
-            arrayOf("storage.engine отсутствует", mapOf("storage" to mapOf("jdbcUrl" to "jdbc:sqlite:data/core.db"))),
-            arrayOf("ofdTimeoutSeconds меньше минимально допустимого значения", mapOf("ofdTimeoutSeconds" to 1)),
-            arrayOf(
-                "ofdReconnectIntervalSeconds меньше минимально допустимого значения",
-                mapOf("ofdReconnectIntervalSeconds" to 1)
-            ),
-        )
 
         val CORE_SETTINGS_FIELDS = setOf(
             "allowChanges",

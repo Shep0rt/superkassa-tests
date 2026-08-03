@@ -99,9 +99,13 @@ class HealthRegressionTest : BaseApiTest() {
                 ofd.keys.forEach { key ->
                     assertThat(key)
                         .withFailMessage(
-                            "Контракт API нарушен: фильтр ofdEnvironment=TEST в GET /health вернул ключ '%s', " +
-                                    "который не относится к окружению TEST.",
-                            key,
+                            ApiContractErrorMessages.filterResultMismatch(
+                                ENDPOINT,
+                                "ofdEnvironment",
+                                "TEST",
+                                key,
+                                "ключ должен оканчиваться на ':TEST'",
+                            ),
                         )
                         .endsWith(":TEST")
                 }
@@ -120,9 +124,13 @@ class HealthRegressionTest : BaseApiTest() {
                 ofd.keys.forEach { key ->
                     assertThat(key)
                         .withFailMessage(
-                            "Контракт API нарушен: фильтр ofdProvider=KAZAKHTELECOM в GET /health вернул ключ '%s', " +
-                                    "который не относится к провайдеру KAZAKHTELECOM.",
-                            key,
+                            ApiContractErrorMessages.filterResultMismatch(
+                                ENDPOINT,
+                                "ofdProvider",
+                                "KAZAKHTELECOM",
+                                key,
+                                "ключ должен начинаться с 'KAZAKHTELECOM:'",
+                            ),
                         )
                         .startsWith("KAZAKHTELECOM:")
                 }
@@ -251,23 +259,34 @@ class HealthRegressionTest : BaseApiTest() {
         ofd.forEach { (key, status) ->
             softly.assertThat(key)
                 .withFailMessage(
-                    "Контракт API нарушен: ключ '%s' в объекте 'ofd' ответа GET /health должен иметь формат PROVIDER:ENVIRONMENT.",
-                    key,
+                    ApiContractErrorMessages.valueFormatMismatch(
+                        ENDPOINT,
+                        "ofd.$key",
+                        key,
+                        "PROVIDER:ENVIRONMENT",
+                        "HealthResponse",
+                    ),
                 )
                 .contains(":")
             softly.assertThat(status)
                 .withFailMessage(
-                    "Контракт API нарушен: поле 'ofd.%s' в ответе GET /health должно иметь тип 'String' согласно Swagger-описанию метода GET /health и ожидаемой структуре HealthResponse.",
-                    key,
+                    ApiContractErrorMessages.documentedFieldTypeMismatch(
+                        ENDPOINT,
+                        "ofd.$key",
+                        "String",
+                        status,
+                        "HealthResponse",
+                    ),
                 )
                 .isInstanceOf(String::class.java)
             softly.assertThat(status as? String)
                 .withFailMessage(
-                    "Контракт API нарушен: поле 'ofd.%s' в ответе GET /health содержит неподдерживаемое значение '%s'. " +
-                            "Допустимые префиксы статуса: %s.",
-                    key,
-                    status,
-                    ApiEnumValues.HEALTH_OFD_STATUS_PREFIXES.joinToString(),
+                    ApiContractErrorMessages.valuePrefixUnsupported(
+                        ENDPOINT,
+                        "ofd.$key",
+                        status as? String,
+                        ApiEnumValues.HEALTH_OFD_STATUS_PREFIXES,
+                    ),
                 )
                 .matches { value -> ApiEnumValues.HEALTH_OFD_STATUS_PREFIXES.any { value.startsWith(it) } }
         }

@@ -466,8 +466,11 @@ class SettingsPutRegressionTest : BaseApiTest() {
     private fun assumeSettingsChangesAllowed(settings: Map<String, Any?>) {
         assertThat(settings)
             .withFailMessage(
-                "Контракт API нарушен: в ответе GET /settings отсутствует обязательное поле 'allowChanges'. " +
-                        "Поле 'allowChanges' помечено как required в Swagger-схеме CoreSettingsDto.",
+                ApiContractErrorMessages.requiredFieldMissing(
+                    "GET /settings",
+                    "allowChanges",
+                    "CoreSettingsDto",
+                ),
             )
             .containsKey("allowChanges")
 
@@ -475,9 +478,13 @@ class SettingsPutRegressionTest : BaseApiTest() {
 
         assertThat(allowChanges)
             .withFailMessage(
-                "Контракт API нарушен: поле 'allowChanges' в ответе GET /settings должно иметь тип 'Boolean' " +
-                        "согласно Swagger-схеме CoreSettingsDto, сейчас вернулось значение '%s'.",
-                allowChanges,
+                ApiContractErrorMessages.fieldTypeMismatch(
+                    "GET /settings",
+                    "allowChanges",
+                    "Boolean",
+                    allowChanges,
+                    "CoreSettingsDto",
+                ),
             )
             .isInstanceOf(Boolean::class.javaObjectType)
 

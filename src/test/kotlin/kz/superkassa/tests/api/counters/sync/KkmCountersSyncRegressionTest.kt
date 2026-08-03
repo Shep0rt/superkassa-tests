@@ -1,4 +1,4 @@
-package kz.superkassa.tests.api.kkm.diagnostics.ofd.ping
+package kz.superkassa.tests.api.counters.sync
 
 import io.qameta.allure.Feature
 import io.qameta.allure.Owner
@@ -7,16 +7,13 @@ import io.qameta.allure.SeverityLevel
 import io.qameta.allure.Story
 import io.restassured.http.ContentType
 import io.restassured.http.Method
-import io.restassured.response.Response
-import kz.superkassa.tests.framework.BaseApiTest
 import kz.superkassa.tests.framework.assertions.ApiContractErrorMessages
 import kz.superkassa.tests.framework.contract.ApiEnumValues
+import kz.superkassa.tests.framework.kkm.KkmAuthenticatedTest
 import kz.superkassa.tests.framework.reporting.reportStep
 import kz.superkassa.tests.framework.tags.ApiRegression
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
-import org.junit.jupiter.api.Assumptions.assumeTrue
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,34 +21,26 @@ import org.junit.jupiter.api.parallel.ResourceAccessMode
 import org.junit.jupiter.api.parallel.ResourceLock
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import java.util.UUID
 
 @ApiRegression
 @Feature("API")
-@Story("GET /kkm/{kkmId}/ofd/ping")
+@Story("POST /kkm/{kkmId}/ofd/counters/sync")
 @Owner("Pavel Michka")
-@DisplayName("GET /kkm/{kkmId}/ofd/ping: регрессионные проверки связи ККМ с ОФД")
-@ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ_WRITE)
-@Suppress("NonAsciiCharacters")
-class KkmOfdPingRegressionTest : BaseApiTest() {
-    private lateinit var kkmId: String
-
+@DisplayName("POST /kkm/{kkmId}/ofd/counters/sync: регрессионные проверки синхронизации счетчиков ККМ с ОФД")
+@ResourceLock(value = "kkm-counters", mode = ResourceAccessMode.READ_WRITE)
+@ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ)
+class KkmCountersSyncRegressionTest : KkmAuthenticatedTest() {
     @Nested
-    @DisplayName("Позитивные проверки GET /kkm/{kkmId}/ofd/ping")
+    @DisplayName("Позитивные проверки POST /kkm/{kkmId}/ofd/counters/sync")
     inner class PositiveRegressionTests {
-        @BeforeEach
-        fun `Получаем контрольную ККМ`() {
-            kkmId = firstKkmIdOrSkip()
-        }
-
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping возвращает поля ожидаемых типов")
+        @DisplayName("Метод POST /kkm/{kkmId}/ofd/counters/sync возвращает поля ожидаемых типов")
         fun shouldReturnExpectedFieldTypes() {
-            val response = getOfdPing(kkmId)
+            val response = syncCounters()
 
             SoftAssertions().apply {
-                assertRequiredStatusFieldType(this, response)
+                assertRequiredFieldType(this, response, String::class.java)
 
                 OPTIONAL_STRING_FIELDS.forEach { fieldName ->
                     assertOptionalFieldType(this, response, fieldName, String::class.java)
@@ -64,9 +53,9 @@ class KkmOfdPingRegressionTest : BaseApiTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping возвращает допустимый статус команды ОФД")
+        @DisplayName("Метод POST /kkm/{kkmId}/ofd/counters/sync возвращает допустимый статус команды ОФД")
         fun shouldReturnSupportedOfdCommandStatus() {
-            val response = getOfdPing(kkmId)
+            val response = syncCounters()
             val status = response[STATUS_FIELD] as? String
 
             SoftAssertions().apply {
@@ -95,9 +84,9 @@ class KkmOfdPingRegressionTest : BaseApiTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping не возвращает поля вне Swagger-контракта")
+        @DisplayName("Метод POST /kkm/{kkmId}/ofd/counters/sync не возвращает поля вне Swagger-контракта")
         fun shouldNotReturnFieldsOutsideSwaggerContract() {
-            val response = getOfdPing(kkmId)
+            val response = syncCounters()
             val unexpectedFields = response.keys - RESPONSE_FIELDS
 
             assertThat(unexpectedFields)
@@ -113,23 +102,53 @@ class KkmOfdPingRegressionTest : BaseApiTest() {
     }
 
     @Nested
-    @DisplayName("Негативные проверки GET /kkm/{kkmId}/ofd/ping")
+    @DisplayName("Негативные проверки POST /kkm/{kkmId}/ofd/counters/sync")
     inner class NegativeRegressionTests {
+        @Nested
+        @DisplayName("Проверки авторизации POST /kkm/{kkmId}/ofd/counters/sync")
+        inner class AuthorizationRegressionTests {
+            @Test
+            @Severity(SeverityLevel.NORMAL)
+            @DisplayName("Метод POST /kkm/{kkmId}/ofd/counters/sync возвращает 401 без Authorization")
+            fun shouldReturnUnauthorizedWithoutAuthorization() {
+                reportStep("Проверяем POST ${countersSyncPath(preparedKkm.kkmId)} без Authorization") {
+                    superkassa.requestWithoutAuthorization()
+                        .`when`()
+                        .post(countersSyncPath(preparedKkm.kkmId))
+                        .then()
+                        .shouldHaveStatus(401, "запрос синхронизации счетчиков без Authorization")
+                        .contentType(ContentType.JSON)
+                }
+            }
+
+            @Test
+            @Severity(SeverityLevel.NORMAL)
+            @DisplayName("Метод POST /kkm/{kkmId}/ofd/counters/sync возвращает 403 для неверного PIN")
+            fun shouldReturnForbiddenForInvalidPin() {
+                reportStep("Проверяем POST ${countersSyncPath(preparedKkm.kkmId)} с неверным PIN") {
+                    superkassa.request(INVALID_PIN)
+                        .`when`()
+                        .post(countersSyncPath(preparedKkm.kkmId))
+                        .then()
+                        .shouldHaveStatus(403, "запрос синхронизации счетчиков с неверным PIN")
+                        .contentType(ContentType.JSON)
+                }
+            }
+        }
+
         @Nested
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping возвращает 404 для несуществующей ККМ")
+            @DisplayName("Метод POST /kkm/{kkmId}/ofd/counters/sync возвращает 404 для несуществующей ККМ")
             fun shouldReturnNotFoundForUnknownKkmId() {
-                val unknownKkmId = UUID.randomUUID().toString()
-
-                reportStep("Проверяем GET ${ofdPingPath(unknownKkmId)} для несуществующей ККМ") {
-                    superkassa.requestWithoutAuthorization()
+                reportStep("Проверяем POST ${countersSyncPath(UNKNOWN_KKM_ID)} для несуществующей ККМ") {
+                    superkassa.request(preparedKkm.adminPin)
                         .`when`()
-                        .get(ofdPingPath(unknownKkmId))
+                        .post(countersSyncPath(UNKNOWN_KKM_ID))
                         .then()
-                        .shouldHaveStatus(404, "проверка связи с ОФД для несуществующей ККМ")
+                        .shouldHaveStatus(404, "синхронизация счетчиков для несуществующей ККМ")
                         .contentType(ContentType.JSON)
                 }
             }
@@ -138,20 +157,15 @@ class KkmOfdPingRegressionTest : BaseApiTest() {
         @Nested
         @DisplayName("Проверки неподдерживаемых HTTP-методов")
         inner class UnsupportedHttpMethodsTests {
-            @BeforeEach
-            fun `Получаем контрольную ККМ`() {
-                kkmId = firstKkmIdOrSkip()
-            }
-
-            @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/ofd/ping возвращает 405")
-            @EnumSource(value = Method::class, names = ["POST", "PUT", "PATCH", "DELETE"])
+            @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/ofd/counters/sync возвращает 405")
+            @EnumSource(value = Method::class, names = ["GET", "PUT", "PATCH", "DELETE"])
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод /kkm/{kkmId}/ofd/ping возвращает 405 для HTTP-методов кроме GET")
-            fun shouldReturnMethodNotAllowedForNonGetMethods(method: Method) {
-                reportStep("Проверяем, что HTTP $method ${ofdPingPath(kkmId)} не поддерживается") {
-                    superkassa.requestWithoutAuthorization()
+            @DisplayName("Метод /kkm/{kkmId}/ofd/counters/sync возвращает 405 для HTTP-методов кроме POST")
+            fun shouldReturnMethodNotAllowedForNonPostMethods(method: Method) {
+                reportStep("Проверяем, что HTTP $method ${countersSyncPath(preparedKkm.kkmId)} не поддерживается") {
+                    superkassa.request(preparedKkm.adminPin)
                         .`when`()
-                        .request(method, ofdPingPath(kkmId))
+                        .request(method, countersSyncPath(preparedKkm.kkmId))
                         .then()
                         .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
                 }
@@ -159,67 +173,49 @@ class KkmOfdPingRegressionTest : BaseApiTest() {
         }
     }
 
-    private fun getOfdPing(kkmId: String): Map<String, Any?> =
-        reportStep("Проверяем связь ККМ kkmId='$kkmId' с ОФД через GET ${ofdPingPath(kkmId)} без авторизации") {
-            superkassa.requestWithoutAuthorization()
+    private fun syncCounters(): Map<String, Any?> =
+        reportStep(
+            "Синхронизируем счетчики ККМ kkmId='${preparedKkm.kkmId}' с ОФД через POST " +
+                countersSyncPath(preparedKkm.kkmId),
+        ) {
+            superkassa.request(preparedKkm.adminPin)
                 .`when`()
-                .get(ofdPingPath(kkmId))
+                .post(countersSyncPath(preparedKkm.kkmId))
                 .then()
-                .shouldHaveStatus(200, "публичная проверка связи ККМ с ОФД")
+                .shouldHaveStatus(200, "синхронизация счетчиков ККМ с ОФД")
                 .contentType(ContentType.JSON)
                 .extract()
                 .jsonPath()
                 .getMap("")
         }
 
-    private fun firstKkmIdOrSkip(): String {
-        val response: Response = reportStep("Получаем контрольную ККМ из списка GET /kkm?limit=1&offset=0") {
-            superkassa.requestWithoutAuthorization()
-                .queryParam("limit", 1)
-                .queryParam("offset", 0)
-                .`when`()
-                .get("/kkm")
-                .then()
-                .shouldHaveStatus(200, "получение контрольной ККМ для проверки GET /kkm/{kkmId}/ofd/ping")
-                .contentType(ContentType.JSON)
-                .extract()
-                .response()
-        }
-
-        val items = response.jsonPath().getList<Map<String, Any?>>("items").orEmpty()
-        assumeTrue(items.isNotEmpty(), "В системе нет ККМ для проверки GET /kkm/{kkmId}/ofd/ping")
-
-        val kkmId = items.first()["kkmId"] as? String
-        assumeTrue(!kkmId.isNullOrBlank(), "В контрольной ККМ отсутствует заполненный kkmId")
-
-        return kkmId!!
-    }
-
-    private fun assertRequiredStatusFieldType(
+    private fun assertRequiredFieldType(
         softly: SoftAssertions,
         response: Map<String, Any?>,
+        expectedType: Class<*>,
     ) {
+        val fieldName = STATUS_FIELD
         softly.assertThat(response)
             .withFailMessage(
                 ApiContractErrorMessages.requiredFieldWithTypeMissing(
                     ENDPOINT,
-                    STATUS_FIELD,
-                    String::class.java.simpleName,
+                    fieldName,
+                    expectedType.simpleName,
                     RESPONSE_SCHEMA,
                 ),
             )
-            .containsKey(STATUS_FIELD)
+            .containsKey(fieldName)
 
-        softly.assertThat(response[STATUS_FIELD])
+        softly.assertThat(response[fieldName])
             .withFailMessage(
                 ApiContractErrorMessages.fieldTypeMismatch(
                     ENDPOINT,
-                    STATUS_FIELD,
-                    String::class.java.simpleName,
+                    fieldName,
+                    expectedType.simpleName,
                     RESPONSE_SCHEMA,
                 ),
             )
-            .isInstanceOf(String::class.java)
+            .isInstanceOf(expectedType)
     }
 
     private fun assertOptionalFieldType(
@@ -228,9 +224,9 @@ class KkmOfdPingRegressionTest : BaseApiTest() {
         fieldName: String,
         expectedType: Class<*>,
     ) {
-        val fieldValue = response[fieldName] ?: return
+        val value = response[fieldName] ?: return
 
-        softly.assertThat(fieldValue)
+        softly.assertThat(value)
             .withFailMessage(
                 ApiContractErrorMessages.optionalFieldTypeMismatch(
                     ENDPOINT,
@@ -247,26 +243,29 @@ class KkmOfdPingRegressionTest : BaseApiTest() {
         response: Map<String, Any?>,
         fieldName: String,
     ) {
-        val fieldValue = response[fieldName] ?: return
+        val value = response[fieldName] ?: return
 
-        softly.assertThat(fieldValue)
+        softly.assertThat(value)
             .withFailMessage(
                 ApiContractErrorMessages.optionalFieldTypeMismatch(
                     ENDPOINT,
                     fieldName,
-                    "Integer",
+                    INTEGER_TYPE,
                     RESPONSE_SCHEMA,
                 ),
             )
             .isInstanceOfAny(Int::class.javaObjectType, Long::class.javaObjectType)
     }
 
-    private fun ofdPingPath(kkmId: String): String = "/kkm/$kkmId/ofd/ping"
+    private fun countersSyncPath(kkmId: String): String = "/kkm/$kkmId/ofd/counters/sync"
 
     private companion object {
-        const val ENDPOINT = "GET /kkm/{kkmId}/ofd/ping"
+        const val ENDPOINT = "POST /kkm/{kkmId}/ofd/counters/sync"
         const val RESPONSE_SCHEMA = "OfdCommandResponse"
         const val STATUS_FIELD = "status"
+        const val INTEGER_TYPE = "Integer"
+        const val INVALID_PIN = "999999"
+        const val UNKNOWN_KKM_ID = "00000000-0000-0000-0000-000000000000"
 
         val OPTIONAL_STRING_FIELDS = setOf(
             "autonomousSign",

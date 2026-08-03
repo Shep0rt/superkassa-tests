@@ -13,6 +13,7 @@ object ApiEnumValues {
     val OFD_ENVIRONMENTS = setOf("DEV", "TEST", "PROD")
     val OFD_IDS = setOf("KAZAKHTELECOM")
     val OFD_COMMAND_STATUSES = setOf("OK", "FAILED", "TIMEOUT")
+    val COUNTER_SCOPES = setOf("GLOBAL", "SHIFT")
     val USER_ROLES = setOf("ADMIN", "CASHIER")
     val HEALTH_OFD_STATUS_PREFIXES = setOf("OK", "DEGRADED", "SKIPPED", "ERROR")
 }

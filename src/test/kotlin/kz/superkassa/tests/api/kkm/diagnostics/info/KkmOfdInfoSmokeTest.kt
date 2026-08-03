@@ -1,4 +1,4 @@
-package kz.superkassa.tests.api.kkm.diagnostics.ofd.info
+package kz.superkassa.tests.api.kkm.diagnostics.info
 
 import io.qameta.allure.Feature
 import io.qameta.allure.Owner

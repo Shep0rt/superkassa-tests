@@ -1,4 +1,4 @@
-package kz.superkassa.tests.api.kkm.diagnostics.ofd.info
+package kz.superkassa.tests.api.kkm.diagnostics.ping
 
 import io.qameta.allure.Feature
 import io.qameta.allure.Owner
@@ -28,17 +28,16 @@ import java.util.UUID
 
 @ApiRegression
 @Feature("API")
-@Story("GET /kkm/{kkmId}/ofd/info")
+@Story("GET /kkm/{kkmId}/ofd/ping")
 @Owner("Pavel Michka")
-@DisplayName("GET /kkm/{kkmId}/ofd/info: регрессионные проверки получения информации о ККМ из ОФД")
+@DisplayName("GET /kkm/{kkmId}/ofd/ping: регрессионные проверки связи ККМ с ОФД")
 @ResourceLock(value = "kkm-state", mode = ResourceAccessMode.READ_WRITE)
 @Suppress("NonAsciiCharacters")
-class KkmOfdInfoRegressionTest : BaseApiTest() {
+class KkmOfdPingRegressionTest : BaseApiTest() {
     private lateinit var kkmId: String
 
     @Nested
-    @ApiRegression
-    @DisplayName("Позитивные проверки GET /kkm/{kkmId}/ofd/info")
+    @DisplayName("Позитивные проверки GET /kkm/{kkmId}/ofd/ping")
     inner class PositiveRegressionTests {
         @BeforeEach
         fun `Получаем контрольную ККМ`() {
@@ -47,9 +46,9 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод GET /kkm/{kkmId}/ofd/info возвращает поля ожидаемых типов")
+        @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping возвращает поля ожидаемых типов")
         fun shouldReturnExpectedFieldTypes() {
-            val response = getOfdInfo(kkmId)
+            val response = getOfdPing(kkmId)
 
             SoftAssertions().apply {
                 assertRequiredStatusFieldType(this, response)
@@ -65,9 +64,9 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод GET /kkm/{kkmId}/ofd/info возвращает допустимый статус команды ОФД")
+        @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping возвращает допустимый статус команды ОФД")
         fun shouldReturnSupportedOfdCommandStatus() {
-            val response = getOfdInfo(kkmId)
+            val response = getOfdPing(kkmId)
             val status = response[STATUS_FIELD] as? String
 
             SoftAssertions().apply {
@@ -96,9 +95,9 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
 
         @Test
         @Severity(SeverityLevel.CRITICAL)
-        @DisplayName("Метод GET /kkm/{kkmId}/ofd/info не возвращает поля вне Swagger-контракта")
+        @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping не возвращает поля вне Swagger-контракта")
         fun shouldNotReturnFieldsOutsideSwaggerContract() {
-            val response = getOfdInfo(kkmId)
+            val response = getOfdPing(kkmId)
             val unexpectedFields = response.keys - RESPONSE_FIELDS
 
             assertThat(unexpectedFields)
@@ -114,24 +113,23 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
     }
 
     @Nested
-    @ApiRegression
-    @DisplayName("Негативные проверки GET /kkm/{kkmId}/ofd/info")
+    @DisplayName("Негативные проверки GET /kkm/{kkmId}/ofd/ping")
     inner class NegativeRegressionTests {
         @Nested
         @DisplayName("Проверки несуществующих идентификаторов")
         inner class MissingIdentifiersTests {
             @Test
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод GET /kkm/{kkmId}/ofd/info возвращает 404 для несуществующей ККМ")
+            @DisplayName("Метод GET /kkm/{kkmId}/ofd/ping возвращает 404 для несуществующей ККМ")
             fun shouldReturnNotFoundForUnknownKkmId() {
                 val unknownKkmId = UUID.randomUUID().toString()
 
-                reportStep("Проверяем GET ${ofdInfoPath(unknownKkmId)} для несуществующей ККМ") {
+                reportStep("Проверяем GET ${ofdPingPath(unknownKkmId)} для несуществующей ККМ") {
                     superkassa.requestWithoutAuthorization()
                         .`when`()
-                        .get(ofdInfoPath(unknownKkmId))
+                        .get(ofdPingPath(unknownKkmId))
                         .then()
-                        .shouldHaveStatus(404, "получение информации из ОФД для несуществующей ККМ")
+                        .shouldHaveStatus(404, "проверка связи с ОФД для несуществующей ККМ")
                         .contentType(ContentType.JSON)
                 }
             }
@@ -145,15 +143,15 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
                 kkmId = firstKkmIdOrSkip()
             }
 
-            @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/ofd/info возвращает 405")
+            @ParameterizedTest(name = "HTTP {0} /kkm/'{'kkmId'}'/ofd/ping возвращает 405")
             @EnumSource(value = Method::class, names = ["POST", "PUT", "PATCH", "DELETE"])
             @Severity(SeverityLevel.NORMAL)
-            @DisplayName("Метод /kkm/{kkmId}/ofd/info возвращает 405 для HTTP-методов кроме GET")
+            @DisplayName("Метод /kkm/{kkmId}/ofd/ping возвращает 405 для HTTP-методов кроме GET")
             fun shouldReturnMethodNotAllowedForNonGetMethods(method: Method) {
-                reportStep("Проверяем, что HTTP $method ${ofdInfoPath(kkmId)} не поддерживается") {
+                reportStep("Проверяем, что HTTP $method ${ofdPingPath(kkmId)} не поддерживается") {
                     superkassa.requestWithoutAuthorization()
                         .`when`()
-                        .request(method, ofdInfoPath(kkmId))
+                        .request(method, ofdPingPath(kkmId))
                         .then()
                         .shouldHaveStatus(405, "неподдерживаемый HTTP-метод")
                 }
@@ -161,13 +159,13 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
         }
     }
 
-    private fun getOfdInfo(kkmId: String): Map<String, Any?> =
-        reportStep("Получаем информацию о ККМ kkmId='$kkmId' из ОФД через GET ${ofdInfoPath(kkmId)} без авторизации") {
+    private fun getOfdPing(kkmId: String): Map<String, Any?> =
+        reportStep("Проверяем связь ККМ kkmId='$kkmId' с ОФД через GET ${ofdPingPath(kkmId)} без авторизации") {
             superkassa.requestWithoutAuthorization()
                 .`when`()
-                .get(ofdInfoPath(kkmId))
+                .get(ofdPingPath(kkmId))
                 .then()
-                .shouldHaveStatus(200, "публичное получение информации о ККМ из ОФД")
+                .shouldHaveStatus(200, "публичная проверка связи ККМ с ОФД")
                 .contentType(ContentType.JSON)
                 .extract()
                 .jsonPath()
@@ -182,14 +180,14 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
                 .`when`()
                 .get("/kkm")
                 .then()
-                .shouldHaveStatus(200, "получение контрольной ККМ для проверки GET /kkm/{kkmId}/ofd/info")
+                .shouldHaveStatus(200, "получение контрольной ККМ для проверки GET /kkm/{kkmId}/ofd/ping")
                 .contentType(ContentType.JSON)
                 .extract()
                 .response()
         }
 
         val items = response.jsonPath().getList<Map<String, Any?>>("items").orEmpty()
-        assumeTrue(items.isNotEmpty(), "В системе нет ККМ для проверки GET /kkm/{kkmId}/ofd/info")
+        assumeTrue(items.isNotEmpty(), "В системе нет ККМ для проверки GET /kkm/{kkmId}/ofd/ping")
 
         val kkmId = items.first()["kkmId"] as? String
         assumeTrue(!kkmId.isNullOrBlank(), "В контрольной ККМ отсутствует заполненный kkmId")
@@ -263,10 +261,10 @@ class KkmOfdInfoRegressionTest : BaseApiTest() {
             .isInstanceOfAny(Int::class.javaObjectType, Long::class.javaObjectType)
     }
 
-    private fun ofdInfoPath(kkmId: String): String = "/kkm/$kkmId/ofd/info"
+    private fun ofdPingPath(kkmId: String): String = "/kkm/$kkmId/ofd/ping"
 
     private companion object {
-        const val ENDPOINT = "GET /kkm/{kkmId}/ofd/info"
+        const val ENDPOINT = "GET /kkm/{kkmId}/ofd/ping"
         const val RESPONSE_SCHEMA = "OfdCommandResponse"
         const val STATUS_FIELD = "status"
 

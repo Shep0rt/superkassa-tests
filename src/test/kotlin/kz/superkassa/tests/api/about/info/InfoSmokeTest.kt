@@ -93,7 +93,11 @@ class InfoSmokeTest : BaseApiTest() {
             json.getList<String>("features.deliveryChannels")?.forEach { channel ->
                 assertThat(channel)
                     .withFailMessage(
-                        "Контракт API нарушен: в ответе GET /info обязательное поле 'features.deliveryChannels' содержит пустое значение.",
+                        ApiContractErrorMessages.requiredArrayItemEmpty(
+                            ENDPOINT,
+                            "features.deliveryChannels",
+                            "Features",
+                        ),
                     )
                     .isNotBlank()
             }
